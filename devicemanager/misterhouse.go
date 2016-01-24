@@ -3,11 +3,13 @@ package devicemanager
 import "log"
 
 type mh struct {
-	ipPort string
-	host   string
-	cmd    chan deviceCommand
-	quit   chan struct{}
-	err    chan error
+	ipPort       string
+	host         string
+	deviceNumber DeviceNumber
+	cmd          chan DeviceCommand
+	quit         chan struct{}
+	err          chan error
+	data         chan DeviceData
 }
 
 func (m *mh) execute(action string, object string) error {
@@ -28,9 +30,9 @@ func (m *mh) Start() {
 }
 
 func (m *mh) Execute(action string, object string) {
-	m.cmd <- deviceCommand{
-		action: action,
-		object: object,
+	m.cmd <- DeviceCommand{
+		Action: action,
+		Object: object,
 	}
 }
 func (m *mh) Shutdown() {
@@ -45,7 +47,7 @@ func (m *mh) run() {
 	for {
 		select {
 		case cmd := <-m.cmd:
-			if err := m.execute(cmd.action, cmd.object); err != nil {
+			if err := m.execute(cmd.Action, cmd.Object); err != nil {
 				m.err <- err
 			}
 		case <-m.quit:

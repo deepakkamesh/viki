@@ -1,13 +1,19 @@
+/* Package devicemanager provides an abstraction layer over the devices
+eg. X10 - on C4
+texttospeech
+http - get temp/weather
+pandora - play electronica
+*/
 package devicemanager
 
 import "log"
 
-type deviceNumber int32
+type DeviceNumber int32
 
 // Define all the device types.
 const (
-	Device_MISTERHOUSE deviceNumber = 1
-	Device_PANDORA     deviceNumber = 2
+	Device_MISTERHOUSE DeviceNumber = 1
+	Device_HTTPHANDLER DeviceNumber = 2
 )
 
 // Interface implemented by all device types.
@@ -17,83 +23,98 @@ type device interface {
 	Off()
 	Start()
 	Shutdown()
-	GetErrorChan() <-chan error
 }
 
-type deviceCommand struct {
-	deviceNumber deviceNumber
-	action       string
-	object       string
+// Command structure for devices.
+type DeviceCommand struct {
+	DeviceNumber DeviceNumber
+	Action       string
+	Object       string
 }
 
-type deviceSettings struct {
-	Devices map[deviceNumber]device
+// Return Data from devices.
+type DeviceData struct {
+	DeviceNumber DeviceNumber
+	Data         interface{}
+	Object       string
+}
+
+type DeviceSettings struct {
+	Devices map[DeviceNumber]device
 	quit    chan struct{}
-	cmd     chan deviceCommand
+	cmd     chan DeviceCommand
+	Data    chan DeviceData
+	Err     chan error
 }
 
 // New initializes a new device manager backend.
-func New() *deviceSettings {
+func New() *DeviceSettings {
 	log.Printf("initializing device manager...")
-	return &deviceSettings{
-		Devices: map[deviceNumber]device{
+	errChan := make(chan error, 10)       // Shared error channel.
+	dataChan := make(chan DeviceData, 10) // Shared data channel.
+
+	return &DeviceSettings{
+		Devices: map[DeviceNumber]device{
 			Device_MISTERHOUSE: &mh{
-				ipPort: "1234",
-				host:   "mh.utopia.com",
-				cmd:    make(chan deviceCommand),
-				quit:   make(chan struct{}),
-				err:    make(chan error),
+				deviceNumber: Device_MISTERHOUSE,
+				cmd:          make(chan DeviceCommand),
+				quit:         make(chan struct{}),
+				err:          errChan,
+				data:         dataChan,
 			},
-			Device_PANDORA: &pandora{
-				ip:   "1234",
-				cmd:  make(chan deviceCommand),
-				quit: make(chan struct{}),
-				err:  make(chan error),
+			Device_HTTPHANDLER: &HttpHandler{
+				deviceNumber: Device_HTTPHANDLER,
+				cmd:          make(chan DeviceCommand),
+				quit:         make(chan struct{}),
+				err:          errChan,
+				data:         dataChan,
 			},
 		},
 		quit: make(chan struct{}),
-		cmd:  make(chan deviceCommand, 10),
+		cmd:  make(chan DeviceCommand, 10),
+		Data: dataChan,
+		Err:  errChan,
 	}
 }
 
-// StartDeviceManager starts the device manager backend.
-func (m *deviceSettings) StartDeviceManager() {
-	log.Printf("starting device manager...")
-
-	// Start all the configured devices.
-	m.Devices[Device_MISTERHOUSE].Start()
-	m.Devices[Device_PANDORA].Start()
-	go m.runDeviceManager()
-}
-
 // runDeviceManager runs the device manager loop.
-func (m *deviceSettings) runDeviceManager() {
+func (m *DeviceSettings) runDeviceManager() {
 	for {
 		select {
 		case cmd := <-m.cmd:
-			go m.Devices[cmd.deviceNumber].Execute(cmd.action, cmd.object)
+			go m.Devices[cmd.DeviceNumber].Execute(cmd.Action, cmd.Object)
 		case <-m.quit:
 			return
-		case err := <-m.Devices[Device_PANDORA].GetErrorChan():
-			log.Printf("Error executing Pandora %s", err)
-		case err := <-m.Devices[Device_MISTERHOUSE].GetErrorChan():
-			log.Printf("Error executing Misterhouse %s", err)
 		}
 	}
 }
 
+// StartDeviceManager starts the device manager backend.
+func (m *DeviceSettings) StartDeviceManager() {
+
+	// Start all the configured devices.
+	for _, dev := range m.Devices {
+		dev.Start()
+	}
+	go m.runDeviceManager()
+}
+
 // ExecDeviceCommand executes the command on the specified device.
-func (m *deviceSettings) ExecDeviceCommand(device deviceNumber, action string, object string) {
-	m.cmd <- deviceCommand{
-		deviceNumber: device,
-		action:       action,
-		object:       object,
+func (m *DeviceSettings) ExecDeviceCommand(device DeviceNumber, action string, object string) {
+	m.cmd <- DeviceCommand{
+		DeviceNumber: device,
+		Action:       action,
+		Object:       object,
 	}
 }
 
 // shutdownDeviceManager shutdowns the device manager loop.
-func (m *deviceSettings) ShutdownDeviceManager() {
-	m.Devices[Device_MISTERHOUSE].Shutdown()
-	m.Devices[Device_PANDORA].Shutdown()
+func (m *DeviceSettings) ShutdownDeviceManager() {
+
+	// Stop all the configured devices.
+	for _, dev := range m.Devices {
+		dev.Shutdown()
+	}
+	//Shutdown device manager.
 	m.quit <- struct{}{}
 }
