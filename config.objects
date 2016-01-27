@@ -1,0 +1,50 @@
+{
+  "Objects":
+    [
+      {
+        "Name":"living_light",
+        "Address":"C4",
+        "DevNo": 1
+      },
+      {
+        "Name":"dining_light",
+        "Address":"A1",
+        "DevNo": 1
+      },
+      {
+        "Name":"patio_light",
+        "Address":"B2",
+        "DevNo": 1
+      },
+      {
+        "Name":"living_ms1",
+        "Address":"A2",
+        "DevNo": 1
+      },
+      {
+        "Name":"dining_ms1",
+        "Address":"A4",
+        "DevNo": 1
+      },
+      {
+        "Name":"backyard_ms1",
+        "Address":"A7",
+        "DevNo": 1
+      },
+      {
+        "Name":"patio_ms1",
+        "Address":"A3",
+        "DevNo": 1
+      },
+      {
+        "Name":"bedroom_ms1",
+        "Address":"A5",
+        "DevNo": 1
+      },
+      {
+        "Name":"garage_ms1",
+        "Address":"A6",
+        "DevNo": 1
+      }
+    ]
+}
