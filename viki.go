@@ -3,9 +3,10 @@
 package viki
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
-	"time"
+	"os"
 	"viki/devicemanager"
 )
 
@@ -21,13 +22,26 @@ type Viki struct {
 	UserCodes     []*UserCode
 }
 
+type Config struct {
+	Objects []Object
+}
+
 // ReadConfig reads the configuration from configuration file.
 func (m *Viki) readConfig(file string) error {
+	config := Config{}
+	f, err := os.Open(file)
+	if err != nil {
+		return err
+	}
+	decoder := json.NewDecoder(f)
+	if err := decoder.Decode(&config); err != nil {
+		return fmt.Errorf("error parsing config file ", err)
+	}
+	for _, o := range config.Objects {
+		m.Objects[o.Name] = InitObject(o.Name, o.Address, o.DevNo, m.DeviceManager)
+	}
 
-	// TODO(dkg): Read configuration from file.
-	m.Objects["living_room"] = InitObject("living_room", "C4", devicemanager.Device_MISTERHOUSE, m.DeviceManager)
-	m.Objects["dining_room"] = InitObject("dining_room", "M1", devicemanager.Device_MISTERHOUSE, m.DeviceManager)
-	m.Objects["ipaddress"] = InitObject("ipaddress", "ipaddress", devicemanager.Device_HTTPHANDLER, m.DeviceManager)
+	log.Printf("%+v", m.Objects)
 
 	return nil
 }
@@ -44,16 +58,16 @@ func (m *Viki) Init() error {
 	// Initialize device manager.
 	m.DeviceManager = devicemanager.New()
 
-	// Initiatilze User Code.
+	// Initiatilze user code.
 	m.UserCodes = []*UserCode{
 		&UserCode{
-			f:    m.doSomething,
+			f:    m.timedEvents,
 			data: make(chan devicemanager.DeviceData),
 		},
 	}
 
 	// Read configuration.
-	if err := m.readConfig("fixme"); err != nil {
+	if err := m.readConfig("../config.objects"); err != nil {
 		return fmt.Errorf("unable to open configuration file %s", err)
 	}
 	return nil
@@ -71,10 +85,17 @@ func (m *Viki) Run() {
 	// Run the main processing loop.
 	for {
 		select {
-		case data := <-m.DeviceManager.Data:
-			//	 Send recieved data to all user code channels.
+		case got := <-m.DeviceManager.Data:
+			name, err := m.GetNameOfObject(got.Object)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			// Set state.
+			m.Objects[name].State = got.Data
+			// Send recieved data to all user code channels.
 			for _, userCode := range m.UserCodes {
-				userCode.data <- data
+				userCode.data <- got
 			}
 
 		case err := <-m.DeviceManager.Err:
@@ -83,19 +104,12 @@ func (m *Viki) Run() {
 	}
 }
 
-// User Code.
+func (m *Viki) GetNameOfObject(address string) (string, error) {
 
-func (m *Viki) doSomething(c chan devicemanager.DeviceData) {
-	t := time.NewTicker(5 * time.Second)
-	for {
-		select {
-		case devData := <-c:
-			d, _ := devData.Data.(string)
-			fmt.Printf("GOt data from %s %s", data.Object, d)
-		case <-t.C:
-			m.Objects["ipaddress"].Execute("chil")
-		default:
-			//m.Objects["ipaddress"].Execute("chil")
+	for k, v := range m.Objects {
+		if v.Address == address {
+			return k, nil
 		}
 	}
+	return "", fmt.Errorf("object with address %s not found", address)
 }

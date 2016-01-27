@@ -9,7 +9,7 @@ device manager. It also maintains state of each object.
 type Object struct {
 	Name    string                        // Human readable name.
 	Address string                        // Address of device. Optional.
-	State   string                        // State of object.
+	State   interface{}                   // State of object.
 	DevNo   devicemanager.DeviceNumber    // Device number.
 	DevMgr  *devicemanager.DeviceSettings // DeviceMaanger.
 }
@@ -23,6 +23,7 @@ func InitObject(name string, address string, deviceNo devicemanager.DeviceNumber
 	}
 }
 
-func (m *Object) Execute(action string) {
-	m.DevMgr.ExecDeviceCommand(m.DevNo, action, m.Address)
+func (m *Object) Execute(data interface{}) {
+	m.DevMgr.Devices[m.DevNo].Execute(data, m.Address)
+	m.State = data
 }

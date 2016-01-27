@@ -4,7 +4,7 @@ import "log"
 
 type HttpHandler struct {
 	deviceNumber DeviceNumber
-	cmd          chan DeviceCommand
+	cmd          chan DeviceData
 	quit         chan struct{}
 	err          chan error
 	data         chan DeviceData
@@ -14,8 +14,9 @@ func getRealIP() (string, error) {
 	return "10.0.0.1", nil
 }
 
-func (m *HttpHandler) execute(action string, object string) (string, error) {
-	log.Printf("HttpHandler: executing %s on %s", action, object)
+func (m *HttpHandler) execute(action interface{}, object string) (string, error) {
+	c, _ := action.(ObjState)
+	log.Printf("HttpHandler: executing %d on %s", c, object)
 	return getRealIP()
 }
 
@@ -26,9 +27,10 @@ func (m *HttpHandler) Off() {
 	log.Printf("Turn off HttpHandler")
 }
 
-func (m *HttpHandler) Start() {
+func (m *HttpHandler) Start() error {
 	log.Printf("starting device HttpHandler...")
 	go m.run()
+	return nil
 }
 
 func (m *HttpHandler) Shutdown() {
@@ -39,9 +41,9 @@ func (m *HttpHandler) GetErrorChan() <-chan error {
 	return m.err
 }
 
-func (m *HttpHandler) Execute(action string, object string) {
-	m.cmd <- DeviceCommand{
-		Action: action,
+func (m *HttpHandler) Execute(action interface{}, object string) {
+	m.cmd <- DeviceData{
+		Data:   action,
 		Object: object,
 	}
 }
@@ -49,7 +51,7 @@ func (m *HttpHandler) run() {
 	for {
 		select {
 		case cmd := <-m.cmd:
-			data, err := m.execute(cmd.Action, cmd.Object)
+			data, err := m.execute(cmd.Data, cmd.Object)
 			if err != nil {
 				m.err <- err
 				continue
