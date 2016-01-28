@@ -45,6 +45,16 @@
         "Name":"garage_ms1",
         "Address":"A6",
         "DevNo": 1
+      },
+      {
+        "Name":"http_request",
+        "Address":"http",
+        "DevNo": 2
+      },
+      {
+        "Name":"speaker",
+        "Address":"festival",
+        "DevNo": 3
       }
     ]
 }

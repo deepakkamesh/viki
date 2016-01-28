@@ -1,6 +1,7 @@
 package devicemanager
 
 import (
+	"flag"
 	"log"
 
 	"github.com/deepakkamesh/cm11"
@@ -12,7 +13,6 @@ type x10 struct {
 	quit         chan struct{}
 	err          chan error
 	data         chan DeviceData
-	tty          string
 	cm11         *cm11.Device
 	cm11Data     chan cm11.ObjState
 }
@@ -20,7 +20,7 @@ type x10 struct {
 func (m *x10) execute(data interface{}, address string) error {
 	d, _ := data.(string)
 	m.cm11.SendCommand(address[0:1], address[1:], d)
-	log.Printf("cm11 executing %d on %s", d, address)
+	log.Printf("cm11 executing %s on %s", d, address)
 	return nil
 }
 
@@ -33,8 +33,10 @@ func (m *x10) Off() {
 
 func (m *x10) Start() error {
 	log.Printf("starting device cm11...")
+	fl := flag.Lookup("x10_tty")
+	tty := fl.Value.String()
 	m.cm11Data = make(chan cm11.ObjState)
-	m.cm11 = cm11.New(m.tty, m.cm11Data)
+	m.cm11 = cm11.New(tty, m.cm11Data)
 	if err := m.cm11.Init(); err != nil {
 		return err
 	}

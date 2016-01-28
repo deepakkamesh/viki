@@ -1,6 +1,12 @@
 package devicemanager
 
-import "log"
+import (
+	"flag"
+	"fmt"
+	"log"
+	"net/http"
+	"strings"
+)
 
 type HttpHandler struct {
 	deviceNumber DeviceNumber
@@ -10,25 +16,17 @@ type HttpHandler struct {
 	data         chan DeviceData
 }
 
-func getRealIP() (string, error) {
-	return "10.0.0.1", nil
-}
-
-func (m *HttpHandler) execute(action interface{}, object string) (string, error) {
-	c, _ := action.(ObjState)
-	log.Printf("HttpHandler: executing %d on %s", c, object)
-	return getRealIP()
-}
-
 func (m *HttpHandler) On() {
-	log.Printf("Turn off HttpHandler")
 }
 func (m *HttpHandler) Off() {
-	log.Printf("Turn off HttpHandler")
 }
 
 func (m *HttpHandler) Start() error {
 	log.Printf("starting device HttpHandler...")
+	http.HandleFunc("/object/", m.handleObject)
+	fl := flag.Lookup("http_listen_port")
+	port := fl.Value.String()
+	go http.ListenAndServe(":"+port, nil)
 	go m.run()
 	return nil
 }
@@ -37,32 +35,33 @@ func (m *HttpHandler) Shutdown() {
 	m.quit <- struct{}{}
 }
 
-func (m *HttpHandler) GetErrorChan() <-chan error {
-	return m.err
-}
-
 func (m *HttpHandler) Execute(action interface{}, object string) {
 	m.cmd <- DeviceData{
 		Data:   action,
 		Object: object,
 	}
 }
+
 func (m *HttpHandler) run() {
 	for {
 		select {
-		case cmd := <-m.cmd:
-			data, err := m.execute(cmd.Data, cmd.Object)
-			if err != nil {
-				m.err <- err
-				continue
-			}
-			m.data <- DeviceData{
-				DeviceNumber: m.deviceNumber,
-				Data:         data,
-				Object:       cmd.Object,
-			}
+		case <-m.cmd:
+			continue
 		case <-m.quit:
 			return
 		}
+	}
+}
+
+func (m *HttpHandler) handleObject(w http.ResponseWriter, r *http.Request) {
+	req := strings.Split(r.URL.Path[1:], "/")
+	if req[0] == "object" {
+		m.data <- DeviceData{
+			DeviceNumber: m.deviceNumber,
+			Data:         req[1:],
+			Object:       "http",
+		}
+		fmt.Fprintf(w, "Setting %s on %s", req[2], req[1])
+		log.Printf("recieved http request %s %s", req[2], req[1])
 	}
 }

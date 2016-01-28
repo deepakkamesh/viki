@@ -41,8 +41,6 @@ func (m *Viki) readConfig(file string) error {
 		m.Objects[o.Name] = InitObject(o.Name, o.Address, o.DevNo, m.DeviceManager)
 	}
 
-	log.Printf("%+v", m.Objects)
-
 	return nil
 }
 
@@ -53,7 +51,7 @@ func New() *Viki {
 	}
 }
 
-func (m *Viki) Init() error {
+func (m *Viki) Init(configFile string) error {
 
 	// Initialize device manager.
 	m.DeviceManager = devicemanager.New()
@@ -64,10 +62,18 @@ func (m *Viki) Init() error {
 			f:    m.timedEvents,
 			data: make(chan devicemanager.DeviceData),
 		},
+		&UserCode{
+			f:    m.httpHandler,
+			data: make(chan devicemanager.DeviceData),
+		},
+		&UserCode{
+			f:    m.logger,
+			data: make(chan devicemanager.DeviceData),
+		},
 	}
 
 	// Read configuration.
-	if err := m.readConfig("../config.objects"); err != nil {
+	if err := m.readConfig(configFile); err != nil {
 		return fmt.Errorf("unable to open configuration file %s", err)
 	}
 	return nil
@@ -105,7 +111,6 @@ func (m *Viki) Run() {
 }
 
 func (m *Viki) GetNameOfObject(address string) (string, error) {
-
 	for k, v := range m.Objects {
 		if v.Address == address {
 			return k, nil

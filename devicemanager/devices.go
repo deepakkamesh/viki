@@ -24,6 +24,7 @@ type DeviceNumber int32
 const (
 	Device_X10         DeviceNumber = 1
 	Device_HTTPHANDLER DeviceNumber = 2
+	Device_SPEAKER     DeviceNumber = 3
 )
 
 // Interface implemented by all device types.
@@ -63,10 +64,16 @@ func New() *DeviceSettings {
 				quit:         make(chan struct{}),
 				err:          errChan,
 				data:         dataChan,
-				tty:          "/dev/ttyUSB0",
 			},
 			Device_HTTPHANDLER: &HttpHandler{
 				deviceNumber: Device_HTTPHANDLER,
+				cmd:          make(chan DeviceData, 10),
+				quit:         make(chan struct{}),
+				err:          errChan,
+				data:         dataChan,
+			},
+			Device_SPEAKER: &Speaker{
+				deviceNumber: Device_SPEAKER,
 				cmd:          make(chan DeviceData, 10),
 				quit:         make(chan struct{}),
 				err:          errChan,
