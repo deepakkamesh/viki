@@ -2,7 +2,8 @@ package viki
 
 import (
 	"log"
-	"viki/devicemanager"
+
+	"github.com/deepakkamesh/viki/devicemanager"
 )
 
 func (m *Viki) httpHandler(c chan devicemanager.DeviceData) {

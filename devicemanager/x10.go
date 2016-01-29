@@ -18,6 +18,7 @@ type x10 struct {
 	out      chan DeviceData
 	cm11     *cm11.Device
 	cm11Data chan cm11.ObjState
+	cm11Err  chan error
 }
 
 func (m *x10) execute(data interface{}, address string) error {
@@ -39,7 +40,8 @@ func (m *x10) Start() error {
 	fl := flag.Lookup("x10_tty")
 	tty := fl.Value.String()
 	m.cm11Data = make(chan cm11.ObjState)
-	m.cm11 = cm11.New(tty, m.cm11Data)
+	m.cm11Err = make(chan error)
+	m.cm11 = cm11.New(tty, m.cm11Data, m.cm11Err)
 	if err := m.cm11.Init(); err != nil {
 		return err
 	}
@@ -71,6 +73,8 @@ func (m *x10) run() {
 				Data:     data.FunctionCode,
 				Object:   obj,
 			}
+		case err := <-m.cm11Err:
+			m.err <- err
 		case <-m.quit:
 			return
 		}

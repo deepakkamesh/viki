@@ -9,7 +9,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"viki/devicemanager"
+
+	"github.com/deepakkamesh/viki/devicemanager"
 )
 
 type UserCode struct {

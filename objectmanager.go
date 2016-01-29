@@ -1,6 +1,6 @@
 package viki
 
-import "viki/devicemanager"
+import "github.com/deepakkamesh/viki/devicemanager"
 
 /* Object manager reads the configuration and maps the objects with the underlying
 device manager. It also maintains state of each object.
