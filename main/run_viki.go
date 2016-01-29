@@ -14,7 +14,7 @@ func main() {
 	fmt.Println("Starting Viki version:", v.Version)
 
 	// Setup flags.
-	configFile := flag.String("config_file", "../config.objects", "Config file for objects")
+	configFile := flag.String("config_file", "../objects.conf", "Config file for objects")
 	logFile := flag.String("log_file", "viki.log", "log file path")
 	flag.String("festival_ipport", "10.0.0.23:1314", "Ip:Port of festival server")
 	flag.String("http_listen_port", "2233", "Port number of the http server")

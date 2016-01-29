@@ -3,10 +3,12 @@
 package viki
 
 import (
-	"encoding/json"
+	"bufio"
 	"fmt"
 	"log"
 	"os"
+	"regexp"
+	"strings"
 	"viki/devicemanager"
 )
 
@@ -22,25 +24,32 @@ type Viki struct {
 	UserCodes     []*UserCode
 }
 
-type Config struct {
-	Objects []Object
-}
-
 // ReadConfig reads the configuration from configuration file.
 func (m *Viki) readConfig(file string) error {
-	config := Config{}
 	f, err := os.Open(file)
 	if err != nil {
 		return err
 	}
-	decoder := json.NewDecoder(f)
-	if err := decoder.Decode(&config); err != nil {
-		return fmt.Errorf("error parsing config file ", err)
-	}
-	for _, o := range config.Objects {
-		m.Objects[o.Name] = InitObject(o.Name, o.Address, o.DevNo, m.DeviceManager)
-	}
+	defer f.Close()
 
+	scanner := bufio.NewScanner(f)
+	c := []string{}
+	comment := regexp.MustCompile(`^#|^[\s]*$`) // Ignore comment or blank lines.
+	for scanner.Scan() {
+		line := scanner.Text()
+		if comment.MatchString(line) {
+			continue
+		}
+		c = strings.Split(line, ",")
+		for i, _ := range c {
+			c[i] = strings.Trim(c[i], " ")
+		}
+		dev, ok := m.DeviceManager.Devices[devicemanager.DeviceId(c[2])]
+		if !ok {
+			return fmt.Errorf("invalid device \"%s\" specified", c[2])
+		}
+		m.Objects[c[1]] = InitObject(c[0], dev)
+	}
 	return nil
 }
 
@@ -74,7 +83,7 @@ func (m *Viki) Init(configFile string) error {
 
 	// Read configuration.
 	if err := m.readConfig(configFile); err != nil {
-		return fmt.Errorf("unable to open configuration file %s", err)
+		return fmt.Errorf("config file error %s", err)
 	}
 	return nil
 }
@@ -93,12 +102,10 @@ func (m *Viki) Run() {
 		select {
 		case got := <-m.DeviceManager.Data:
 			name, err := m.GetNameOfObject(got.Object)
-			if err != nil {
-				log.Println(err)
-				continue
+			// Set state if object is defined.
+			if err == nil {
+				m.Objects[name].State = got.Data
 			}
-			// Set state.
-			m.Objects[name].State = got.Data
 			// Send recieved data to all user code channels.
 			for _, userCode := range m.UserCodes {
 				userCode.data <- got

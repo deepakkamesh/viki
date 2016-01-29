@@ -7,14 +7,17 @@ import (
 	"github.com/deepakkamesh/cm11"
 )
 
+// Unique Device Number.
+const Device_X10 DeviceId = "x10"
+
 type x10 struct {
-	deviceNumber DeviceNumber
-	cmd          chan DeviceData
-	quit         chan struct{}
-	err          chan error
-	data         chan DeviceData
-	cm11         *cm11.Device
-	cm11Data     chan cm11.ObjState
+	deviceId DeviceId
+	in       chan DeviceData
+	quit     chan struct{}
+	err      chan error
+	out      chan DeviceData
+	cm11     *cm11.Device
+	cm11Data chan cm11.ObjState
 }
 
 func (m *x10) execute(data interface{}, address string) error {
@@ -45,7 +48,7 @@ func (m *x10) Start() error {
 }
 
 func (m *x10) Execute(action interface{}, object string) {
-	m.cmd <- DeviceData{
+	m.in <- DeviceData{
 		Data:   action,
 		Object: object,
 	}
@@ -57,16 +60,16 @@ func (m *x10) Shutdown() {
 func (m *x10) run() {
 	for {
 		select {
-		case cmd := <-m.cmd:
-			if err := m.execute(cmd.Data, cmd.Object); err != nil {
+		case in := <-m.in:
+			if err := m.execute(in.Data, in.Object); err != nil {
 				m.err <- err
 			}
 		case data := <-m.cm11Data:
 			obj := data.HouseCode + data.DeviceCode // eg. C4
-			m.data <- DeviceData{
-				DeviceNumber: m.deviceNumber,
-				Data:         data.FunctionCode,
-				Object:       obj,
+			m.out <- DeviceData{
+				DeviceId: m.deviceId,
+				Data:     data.FunctionCode,
+				Object:   obj,
 			}
 		case <-m.quit:
 			return

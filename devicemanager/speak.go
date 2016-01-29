@@ -9,14 +9,17 @@ import (
 	"time"
 )
 
+// Unique Device ID.
+const Device_SPEAKER DeviceId = "speaker"
+
 type Speaker struct {
-	deviceNumber DeviceNumber
-	cmd          chan DeviceData
-	quit         chan struct{}
-	err          chan error
-	data         chan DeviceData
-	ipPort       string
-	conn         net.Conn
+	deviceId DeviceId
+	in       chan DeviceData
+	quit     chan struct{}
+	err      chan error
+	out      chan DeviceData
+	ipPort   string
+	conn     net.Conn
 }
 
 func (m *Speaker) speakFestival(data interface{}) error {
@@ -65,7 +68,7 @@ func (m *Speaker) Start() error {
 
 // Execute queues up the requested command to the channel.
 func (m *Speaker) Execute(action interface{}, object string) {
-	m.cmd <- DeviceData{
+	m.in <- DeviceData{
 		Data:   action,
 		Object: object,
 	}
@@ -80,10 +83,10 @@ func (m *Speaker) Shutdown() {
 func (m *Speaker) run() {
 	for {
 		select {
-		case cmd := <-m.cmd:
-			switch cmd.Object {
+		case in := <-m.in:
+			switch in.Object {
 			case "festival":
-				if err := m.speakFestival(cmd.Data); err != nil {
+				if err := m.speakFestival(in.Data); err != nil {
 					m.err <- err
 				}
 			}

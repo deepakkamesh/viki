@@ -7,12 +7,15 @@ package devicemanager
 
 import "log"
 
+// Unique Device Id. Usually  same as device name.
+const Device_ANYDEVICE DeviceId = "anydevice"
+
 type anydev struct {
-	deviceNumber DeviceNumber
-	cmd          chan DeviceData
-	quit         chan struct{}
-	err          chan error
-	data         chan DeviceData
+	deviceId DeviceId
+	in       chan DeviceData
+	quit     chan struct{}
+	err      chan error
+	out      chan DeviceData
 }
 
 func (m *anydev) execute(data interface{}, object string) error {
@@ -45,7 +48,7 @@ func (m *anydev) Start() error {
 // DONOTCHANGE.
 // Execute queues up the requested command to the channel.
 func (m *anydev) Execute(action interface{}, object string) {
-	m.cmd <- DeviceData{
+	m.in <- DeviceData{
 		Data:   action,
 		Object: object,
 	}
@@ -62,8 +65,8 @@ func (m *anydev) Shutdown() {
 func (m *anydev) run() {
 	for {
 		select {
-		case cmd := <-m.cmd:
-			if err := m.execute(cmd.Data, cmd.Object); err != nil {
+		case in := <-m.in:
+			if err := m.execute(in.Data, in.Object); err != nil {
 				m.err <- err
 			}
 		case <-m.quit:

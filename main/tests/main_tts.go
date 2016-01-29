@@ -1,27 +1,30 @@
 package main
 
-import (
-	"log"
-	"viki/tts"
-	"time"
-)
+import "fmt"
+
+type obj struct {
+	a int
+	b interface{}
+}
+
+type state struct {
+	b string
+}
+
+func (m *state) GetState() string {
+	return m.b
+}
+
+func (m *state) SetState(st string) {
+	m.b = st
+}
 
 func main() {
-	speaker := tts.New("10.0.0.23:1314", 3)
-	speaker.StartSpeaker()
-
-	sp := []string{"hello there", "there is rain", "i am checking it out", "I like ice creams", "golang is concurrency"}
-	for _, i := range sp {
-		speaker.Speak(i)
-		//time.Sleep(1 * time.Second)
+	a := obj{
+		a: 3,
+		b: &state{},
 	}
-	log.Printf("Completed loop")
-	time.Sleep(3*time.Second)
-
-	for _, i := range sp {
-		speaker.Speak(i)
-		//time.Sleep(1 * time.Second)
-	}
-	for {
-	}
+	c, _ := a.b.(*state)
+	c.SetState("dddddd")
+	fmt.Println(c.GetState())
 }
