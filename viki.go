@@ -65,6 +65,11 @@ func (m *Viki) Init(configFile string) error {
 	// Initialize device manager.
 	m.DeviceManager = devicemanager.New()
 
+	// Read configuration.
+	if err := m.readConfig(configFile); err != nil {
+		return fmt.Errorf("config file error %s", err)
+	}
+
 	// Initiatilze user code.
 	m.UserCodes = []*UserCode{
 		&UserCode{
@@ -81,13 +86,10 @@ func (m *Viki) Init(configFile string) error {
 		},
 	}
 
-	// Read configuration.
-	if err := m.readConfig(configFile); err != nil {
-		return fmt.Errorf("config file error %s", err)
-	}
 	return nil
 }
 
+// Run is the main processing loop.
 func (m *Viki) Run() {
 	// Start Device Manager.
 	m.DeviceManager.StartDeviceManager()
@@ -117,6 +119,7 @@ func (m *Viki) Run() {
 	}
 }
 
+// GetNameOfObject returns the name associated with object address.
 func (m *Viki) GetNameOfObject(address string) (string, error) {
 	for k, v := range m.Objects {
 		if v.Address == address {
@@ -124,4 +127,22 @@ func (m *Viki) GetNameOfObject(address string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("object with address %s not found", address)
+}
+
+// SendToObject sends data to the object.
+func (m *Viki) SendToObject(name string, data interface{}) error {
+	if obj, ok := m.Objects[name]; ok {
+		obj.Execute(data)
+		return nil
+	}
+	return fmt.Errorf("unknown object %s", name)
+}
+
+// SendToDevice sends data to address on deviceId.
+func (m *Viki) SendToDevice(dev string, address string, data interface{}) error {
+	if dev, ok := m.DeviceManager.Devices[devicemanager.DeviceId(dev)]; ok {
+		dev.Execute(data, address)
+		return nil
+	}
+	return fmt.Errorf("unknown device %s", dev)
 }
