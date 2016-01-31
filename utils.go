@@ -3,12 +3,13 @@ package viki
 import "strings"
 
 func sanitizeState(state string) string {
-
-	switch strings.Trim(strings.ToLower(state), " ") {
+	recv := strings.Trim(strings.ToLower(state), " ")
+	switch recv {
 	case "on":
 		return "On"
 	case "off":
 		return "Off"
+	default:
+		return recv
 	}
-	return ""
 }

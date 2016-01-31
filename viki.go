@@ -45,11 +45,15 @@ func (m *Viki) readConfig(file string) error {
 		for i, _ := range c {
 			c[i] = strings.Trim(c[i], " ")
 		}
-		dev, ok := m.DeviceManager.Devices[devicemanager.DeviceId(c[2])]
-		if !ok {
-			return fmt.Errorf("invalid device \"%s\" specified", c[2])
+		if len(c) == 3 {
+			dev, ok := m.DeviceManager.Devices[devicemanager.DeviceId(c[2])]
+			if !ok {
+				return fmt.Errorf("invalid device \"%s\" specified", c[2])
+			}
+			m.Objects[c[1]] = InitObject(c[0], dev)
+		} else {
+			m.Objects[c[1]] = InitObject(c[0], nil)
 		}
-		m.Objects[c[1]] = InitObject(c[0], dev)
 	}
 	return nil
 }
@@ -70,20 +74,19 @@ func (m *Viki) Init(configFile string) error {
 	if err := m.readConfig(configFile); err != nil {
 		return fmt.Errorf("config file error %s", err)
 	}
-
 	// Initiatilze user code.
 	m.UserCodes = []*UserCode{
 		&UserCode{
 			f:    m.timedEvents,
-			data: make(chan devicemanager.DeviceData),
+			data: make(chan devicemanager.DeviceData, 10),
 		},
 		&UserCode{
 			f:    m.httpHandler,
-			data: make(chan devicemanager.DeviceData),
+			data: make(chan devicemanager.DeviceData, 10),
 		},
 		&UserCode{
 			f:    m.logger,
-			data: make(chan devicemanager.DeviceData),
+			data: make(chan devicemanager.DeviceData, 10),
 		},
 	}
 
@@ -107,9 +110,9 @@ func (m *Viki) Run() {
 			name, err := m.GetNameOfObject(got.Object)
 			// Set state if object is defined.
 			if err == nil {
-				m.Objects[name].State = got.Data
+				m.Objects[name].SetState(got.Data)
 			}
-			// Send recieved data to all user code channels.
+			// Send event to all user code channels.
 			for _, userCode := range m.UserCodes {
 				userCode.data <- got
 			}
@@ -131,9 +134,17 @@ func (m *Viki) GetNameOfObject(address string) (string, error) {
 }
 
 // SendToObject sends data to the object.
-func (m *Viki) SendToObject(name string, data interface{}) error {
+func (m *Viki) ExecObject(name string, data interface{}) error {
 	if obj, ok := m.Objects[name]; ok {
 		obj.Execute(data)
+
+		// Send state change to all user code channels.
+		for _, userCode := range m.UserCodes {
+			userCode.data <- devicemanager.DeviceData{
+				Data:   data,
+				Object: obj.Address,
+			}
+		}
 		return nil
 	}
 	return fmt.Errorf("unknown object %s", name)

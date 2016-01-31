@@ -19,7 +19,15 @@ func InitObject(address string, device devicemanager.Device) *Object {
 	}
 }
 
+// Execute calls the underlying device driver to execute command.
 func (m *Object) Execute(data interface{}) {
-	m.device.Execute(data, m.Address)
+	if m.device != nil {
+		m.device.Execute(data, m.Address)
+	}
+	m.SetState(data)
+}
+
+// SetState changes state of object.
+func (m *Object) SetState(data interface{}) {
 	m.State = data
 }

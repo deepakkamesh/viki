@@ -18,12 +18,11 @@ func (m *Viki) httpHandler(c chan devicemanager.DeviceData) {
 				d, _ := got.Data.([]string)
 				state := sanitizeState(d[1])
 				log.Printf("Got data from %s %s\n", got.Object, d)
-				if obj, ok := m.Objects[d[0]]; ok {
-					obj.Execute(state)
-					m.Objects["speaker"].Execute("Executing command")
+				if err := m.ExecObject(d[0], state); err != nil {
+					log.Printf("recieved unknown object %s", d[0])
 					continue
 				}
-				log.Printf("recieved unknown object %s", d[0])
+				m.ExecObject("speaker", "Executing command")
 			}
 			// Run other code in default.
 			//default:
