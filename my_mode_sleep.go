@@ -15,7 +15,7 @@ func (m *Viki) modeSleep(in chan devicemanager.DeviceData) {
 		// Channel to recieve any events.
 		case got := <-in:
 			d, _ := got.Data.(string)
-			if got.Object == "mode_sleep" && d == "on" {
+			if got.Object == "mode_sleep" && d == "On" {
 				m.ExecObject("living_light", "Off")
 				m.ExecObject("dining_light", "Off")
 			}

@@ -88,6 +88,10 @@ func (m *Viki) Init(configFile string) error {
 			f:    m.logger,
 			data: make(chan devicemanager.DeviceData, 10),
 		},
+		&UserCode{
+			f:    m.modeSleep,
+			data: make(chan devicemanager.DeviceData, 10),
+		},
 	}
 
 	return nil
