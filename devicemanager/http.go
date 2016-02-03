@@ -27,6 +27,7 @@ func (m *HttpHandler) Off() {
 func (m *HttpHandler) Start() error {
 	log.Printf("starting device HttpHandler...")
 	http.HandleFunc("/object/", m.handleObject)
+	http.HandleFunc("/q/", m.handleQuery)
 	fl := flag.Lookup("http_listen_port")
 	port := fl.Value.String()
 	go http.ListenAndServe(":"+port, nil)
@@ -58,13 +59,26 @@ func (m *HttpHandler) run() {
 
 func (m *HttpHandler) handleObject(w http.ResponseWriter, r *http.Request) {
 	req := strings.Split(r.URL.Path[1:], "/")
-	if req[0] == "object" {
-		m.out <- DeviceData{
-			DeviceId: m.deviceId,
-			Data:     req[1:],
-			Object:   "http",
-		}
-		fmt.Fprintf(w, "Setting %s on %s", req[2], req[1])
-		log.Printf("recieved http request %s %s", req[2], req[1])
+	if len(req) < 3 {
+		fmt.Fprintf(w, "Error: Use format object/<name>/<cmd>")
 	}
+	m.out <- DeviceData{
+		DeviceId: m.deviceId,
+		Data:     req[1:],
+		Object:   "http_cmd",
+	}
+	fmt.Fprintf(w, "Setting %s on %s", req[2], req[1])
+	log.Printf("recieved http request %s %s", req[2], req[1])
+}
+
+func (m *HttpHandler) handleQuery(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Path[3:]
+
+	m.out <- DeviceData{
+		DeviceId: m.deviceId,
+		Data:     q,
+		Object:   "http_qry",
+	}
+	fmt.Fprintf(w, "Executing query %s", q)
+	log.Printf("recieved http request %s", q)
 }

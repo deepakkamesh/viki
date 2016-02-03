@@ -13,3 +13,13 @@ func sanitizeState(state string) string {
 		return recv
 	}
 }
+
+// contains returns true if string e exists in slice s.
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}

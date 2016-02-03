@@ -16,18 +16,17 @@ func (m *Viki) timedEvents(in chan devicemanager.DeviceData) {
 	for {
 		select {
 		// Channel to recieve any events.
-		case got := <-in:
-			d, _ := got.Data.(string)
-			log.Printf("Got data from %s %s\n", got.Object, d)
+		case <-in:
 
 		// At 5pm.
 		case <-t1700.C:
-			m.ExecObject("living_light", "On")
-			m.ExecObject("dining_light", "On")
+			m.ExecObject("living light", "On")
+			m.ExecObject("dining light", "On")
+			m.ExecObject("patio light", "On")
 			log.Printf("turning on living and dining room lights")
 
 		case <-t2200.C:
-			m.ExecObject("patio_light", "Off")
+			m.ExecObject("patio light", "Off")
 
 		}
 
