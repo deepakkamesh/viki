@@ -111,10 +111,10 @@ func (m *Viki) Run() {
 	for {
 		select {
 		case got := <-m.DeviceManager.Data:
-			name, err := m.GetNameOfObject(got.Object)
+			name := m.GetObjectName(got.Object)
 			// Set state if object is defined.
-			if err == nil {
-				m.Objects[name].SetState(got.Data)
+			if obj, ok := m.Objects[name]; ok {
+				obj.SetState(got.Data)
 			}
 			// Send event to all user code channels.
 			for _, userCode := range m.UserCodes {
@@ -127,14 +127,14 @@ func (m *Viki) Run() {
 	}
 }
 
-// GetNameOfObject returns the name associated with object address.
-func (m *Viki) GetNameOfObject(address string) (string, error) {
+// GetObjectName returns the name associated with object address.
+func (m *Viki) GetObjectName(address string) string {
 	for k, v := range m.Objects {
 		if v.Address == address {
-			return k, nil
+			return k
 		}
 	}
-	return "", fmt.Errorf("object with address %s not found", address)
+	return ""
 }
 
 // SendToObject sends data to the object.

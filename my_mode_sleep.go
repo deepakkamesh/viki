@@ -1,3 +1,6 @@
+/* modeSleep will turn off the lights and if there is any motion within the living
+room, turn on the living room lights. If there is any external motion, trigger alarm
+*/
 package viki
 
 import (
@@ -19,9 +22,6 @@ func (m *Viki) modeSleep(in chan devicemanager.DeviceData) {
 				m.ExecObject("living light", "Off")
 				m.ExecObject("dining light", "Off")
 			}
-			// Run other code in default.
-			//default:
-			//m.Objects["ipaddress"].Execute("chil")
 		}
 	}
 }
