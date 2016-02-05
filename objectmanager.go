@@ -10,12 +10,14 @@ type Object struct {
 	Address string               // Address of device. Optional.
 	device  devicemanager.Device // underlying device driver.
 	State   interface{}          // State of object.
+	Tags    []string             // Tags associated with object.
 }
 
-func InitObject(address string, device devicemanager.Device) *Object {
+func InitObject(address string, device devicemanager.Device, tags []string) *Object {
 	return &Object{
 		Address: address,
 		device:  device,
+		Tags:    tags,
 	}
 }
 
@@ -30,4 +32,14 @@ func (m *Object) Execute(data interface{}) {
 // SetState changes state of object.
 func (m *Object) SetState(data interface{}) {
 	m.State = data
+}
+
+// CheckTag returns true if the tag exists on object.
+func (m *Object) CheckTag(tag string) bool {
+	for _, k := range m.Tags {
+		if k == tag {
+			return true
+		}
+	}
+	return false
 }

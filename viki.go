@@ -45,15 +45,28 @@ func (m *Viki) readConfig(file string) error {
 		for i, _ := range c {
 			c[i] = strings.Trim(c[i], " ")
 		}
-		if len(c) == 3 {
-			dev, ok := m.DeviceManager.Devices[devicemanager.DeviceId(c[2])]
-			if !ok {
-				return fmt.Errorf("invalid device \"%s\" specified", c[2])
+
+		// Get device if any.
+		var (
+			ok  bool
+			dev devicemanager.Device
+		)
+		i := 2
+		if len(c)-1 >= i {
+			if dev, ok = m.DeviceManager.Devices[devicemanager.DeviceId(c[i])]; !ok {
+				return fmt.Errorf("invalid device \"%s\" specified", c[i])
 			}
-			m.Objects[c[1]] = InitObject(c[0], dev)
-		} else {
-			m.Objects[c[1]] = InitObject(c[0], nil)
 		}
+
+		// Get tags if any.
+		tags, i := []string{}, 3
+		if len(c)-1 >= i {
+			tags = strings.Split(c[i], "|")
+			for j, _ := range tags {
+				tags[j] = strings.Trim(tags[j], " ")
+			}
+		}
+		m.Objects[c[1]] = InitObject(c[0], dev, tags)
 	}
 	return nil
 }
