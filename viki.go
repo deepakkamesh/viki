@@ -52,7 +52,8 @@ func (m *Viki) readConfig(file string) error {
 			dev devicemanager.Device
 		)
 		i := 2
-		if len(c)-1 >= i {
+		// Ignore device if device not specified or empty.
+		if len(c)-1 >= i && len(c[i]) > 0 {
 			if dev, ok = m.DeviceManager.Devices[devicemanager.DeviceId(c[i])]; !ok {
 				return fmt.Errorf("invalid device \"%s\" specified", c[i])
 			}

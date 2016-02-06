@@ -21,6 +21,7 @@ func main() {
 	flag.String("festival_ipport", "10.0.0.23:1314", "Ip:Port of festival server")
 	flag.String("http_listen_port", "2233", "Port number of the http server")
 	flag.String("x10_tty", "/dev/ttyUSB0", "tty device for x10 controller")
+	flag.String("resource", "./resources", "path to the resources folder")
 	flag.Parse()
 
 	if !*logStdOut {

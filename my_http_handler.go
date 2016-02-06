@@ -1,10 +1,14 @@
 package viki
 
 import (
+	"bytes"
+	"flag"
 	"fmt"
 	"log"
 	"sort"
 	"strings"
+	"text/template"
+	"time"
 
 	"github.com/deepakkamesh/viki/devicemanager"
 )
@@ -12,17 +16,38 @@ import (
 func (m *Viki) httpHandler(c chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine httphandler...")
+
 	// Build object list for nlp.
 	objs := []*nlpMatch{}
 	for k, _ := range m.Objects {
 		objs = append(objs, &nlpMatch{
-			object: strings.Replace(k, "_", " ", -1),
+			object: k,
 			weight: 0,
 		})
 	}
 
+	// Read the templates.
+	var res string
+	if fl := flag.Lookup("resource"); fl != nil {
+		res = fl.Value.String()
+	}
+	tplIdx, err := template.ParseFiles(res + "/index.html")
+	if err != nil {
+		log.Fatalf("error reading file %s", err)
+	}
+	tick := time.NewTicker(2 * time.Second)
+
 	for {
 		select {
+		case <-tick.C:
+			// Build and send objects and state to http device.
+			idxPage, err := buildIndexPage(m.Objects, tplIdx)
+			if err != nil {
+				log.Printf("build index page failed %s", err)
+				continue
+			}
+			m.SendToDevice("httphandler", "idxpage", idxPage)
+
 		// Channel to recieve any events.
 		case got := <-c:
 			switch got.Object {
@@ -47,6 +72,59 @@ func (m *Viki) httpHandler(c chan devicemanager.DeviceData) {
 		}
 	}
 }
+
+/* Building the index page */
+type objtpl struct {
+	Object string
+	State  string
+	Ro     bool
+}
+type idxtpl struct {
+	Objects []objtpl
+}
+
+func (o idxtpl) Len() int {
+	return len(o.Objects)
+}
+
+func (o idxtpl) Less(i, j int) bool {
+	return o.Objects[i].Object < o.Objects[j].Object
+}
+
+func (o idxtpl) Swap(i, j int) {
+	o.Objects[i], o.Objects[j] = o.Objects[j], o.Objects[i]
+}
+
+// buildIndexPage constructs the index page for the web interface.
+func buildIndexPage(o map[string]*Object, tplIdx *template.Template) (string, error) {
+
+	objs := idxtpl{}
+
+	buf := new(bytes.Buffer)
+
+	// Add object to list if its not hidden.
+	for k, v := range o {
+		if !v.CheckTag("web_hidden") {
+			state := "NA"
+			if v.State != nil {
+				state = v.State.(string)
+			}
+			objs.Objects = append(objs.Objects, objtpl{
+				Object: k,
+				State:  state,
+				Ro:     v.CheckTag("web_ro"),
+			})
+		}
+	}
+	sort.Sort(objs)
+	if err := tplIdx.Execute(buf, objs); err != nil {
+		return "", fmt.Errorf("error parsing template %s", err)
+	}
+
+	return buf.String(), nil
+}
+
+/* Natural Language Processing */
 
 type nlpMatch struct {
 	object string
