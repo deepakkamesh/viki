@@ -6,10 +6,9 @@ License: Creative Commons Attribution 3.0 Unported
 License URL: http://creativecommons.org/licenses/by/3.0/
 -->
 <!DOCTYPE html>
-<html>
-<head>
+
 <title>Viki Home</title>
-<meta http-equiv="refresh" content="5">
+<meta http-equiv="refresh" content="60">
 <!-- for-mobile-apps -->
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -329,8 +328,7 @@ p.footer a:hover {
 </style>
 <link href='//fonts.googleapis.com/css?family=Crete+Round:400,400italic' rel='stylesheet' type='text/css'>
 <link href='//fonts.googleapis.com/css?family=Lato:400,100,100italic,300,300italic,400italic,700,700italic,900,900italic' rel='stylesheet' type='text/css'>
-</head>
-<body>
+
 	<div class="main">
 		<h1>Viki Home</h1>
 		<div class="content">
@@ -338,6 +336,33 @@ p.footer a:hover {
 				
 					<h2>Object States</h2>
 					<ul>
+						<li>
+							<span>
+								<div id="info">
+								<p id="info_start">Click mic for voice command</p>
+								<p id="info_status"></p>
+								<p id="info_speak_now">Say viki command</p>
+								<p id="info_no_speech">No speech was detected.</p>
+								<p id="info_no_microphone" style="display:none">
+								No microphone was found. Ensure that a microphone is installed</p>
+								<p id="info_allow">Click the "Allow" button above to enable your microphone.</p>
+								<p id="info_denied">Permission to use microphone was denied.</p>
+								<p id="info_blocked">Permission to use microphone is blocked. To change,
+								go to chrome://settings/contentExceptions#media-stream</p>
+								<p id="info_upgrade">Web Speech API is not supported by this browser.</p>
+								</div>
+							<span>
+							<i>
+							  <button style="height:40px;width:40px" id="start_button" onclick="startButton(event)"><img id="start_img" src="https://i.imgsafe.org/22469db.gif" alt="Start"></button>
+							</i>
+							<i>
+							&nbsp; &nbsp; &nbsp; 
+							</i>
+							<i>
+							  <button style="height:40px;width:40px" id="refresh_button" onclick="location.reload()"><img id="refresh_img" src="https://i.imgsafe.org/06d5825.png" alt="Refresh"></button>
+							</i>
+						</li>
+
 					{{range .Objects}}
 						<li>
 							{{.Object}}
@@ -353,5 +378,110 @@ p.footer a:hover {
 		</div>
 		<p class="footer">© 2016. All Rights Reserved Deepak Guruswamy</p>
 	</div>		
-</body>
-</html>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js">
+</script>
+<script src="http://dotctor.github.io/jQuery.msgBox/scripts/jquery.msgBox.js">
+</script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>
+<script>
+
+showInfo('info_start');
+
+
+var final_transcript = '';
+var recognizing = false;
+var ignore_onend;
+
+if (!('webkitSpeechRecognition' in window)) {
+  upgrade();
+} else {
+  var recognition = new webkitSpeechRecognition();
+  recognition.onstart = function() {
+    recognizing = true;
+    showInfo('info_speak_now');
+    start_img.src = "https://i.imgsafe.org/20d134c.gif"
+  };
+  
+  recognition.onerror = function(event) {
+    if (event.error == 'no-speech') {
+      start_img.src = "https://i.imgsafe.org/22469db.gif"
+      showInfo('info_no_speech');
+      ignore_onend = true;
+    }
+    if (event.error == 'audio-capture') {
+      showInfo('info_no_microphone');
+      start_img.src = "https://i.imgsafe.org/22469db.gif"
+      ignore_onend = true;
+    }
+    if (event.error == 'not-allowed') {
+      if (event.timeStamp - start_timestamp < 100) {
+        showInfo('info_blocked');
+      } else {
+        showInfo('info_denied');
+      }
+      ignore_onend = true;
+    }
+  };
+  
+  recognition.onend = function() {
+    recognizing = false;
+    start_img.src = "https://i.imgsafe.org/22469db.gif"
+    if (ignore_onend) {
+      return;
+    }
+    if (!final_transcript) {
+      showInfo('info_status');
+      return;
+    }
+    showInfo('');
+  };
+  
+  recognition.onresult = function(event) {
+  //console.log(event) 
+    var interim_transcript = '';
+    var res = '';
+    for (var i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+      	 res = event.results[i][0].transcript
+ 	     console.log(res);
+ 	     $.get("q/"+res, function(data, status){
+            document.getElementById("info_status").innerHTML = status +" "+ data;
+        });
+        showInfo('info_status');
+      } 
+    }
+  };
+  
+}
+
+function upgrade() {
+  start_button.style.visibility = 'hidden';
+  showInfo('info_upgrade');
+}
+
+function startButton(event) {
+  if (recognizing) {
+    recognition.stop();
+    return;
+  }
+  recognition.lang = 'en-US';
+  recognition.start();
+  ignore_onend = false;
+  showInfo('info_allow');
+}
+
+function showInfo(s) {
+  if (s) {
+    for (var child = info.firstChild; child; child = child.nextSibling) {
+      if (child.style) {
+        child.style.display = child.id == s ? 'inline' : 'none';
+      }
+    }
+    info.style.visibility = 'visible';
+  } else {
+    info.style.visibility = 'hidden';
+  }
+}
+
+</script>

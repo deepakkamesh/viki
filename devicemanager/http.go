@@ -88,6 +88,6 @@ func (m *HttpHandler) handleQuery(w http.ResponseWriter, r *http.Request) {
 		Data:     q,
 		Object:   "http_qry",
 	}
-	fmt.Fprintf(w, "Executing query %s", q)
+	fmt.Fprintf(w, "executing  %s", q)
 	log.Printf("recieved http request %s", q)
 }
