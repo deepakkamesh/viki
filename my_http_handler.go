@@ -28,9 +28,9 @@ func (m *Viki) httpHandler(c chan devicemanager.DeviceData) {
 
 	// Read the templates.
 	var res string
-	if fl := flag.Lookup("resource"); fl != nil {
-		res = fl.Value.String()
-	}
+	fl := flag.Lookup("resource")
+	res = fl.Value.String()
+
 	tplIdx, err := template.ParseFiles(res + "/index.html")
 	if err != nil {
 		log.Fatalf("error reading file %s", err)

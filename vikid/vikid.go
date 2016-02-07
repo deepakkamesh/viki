@@ -22,6 +22,7 @@ func main() {
 	flag.String("http_listen_port", "2233", "Port number of the http server")
 	flag.String("x10_tty", "/dev/ttyUSB0", "tty device for x10 controller")
 	flag.String("resource", "./resources", "path to the resources folder")
+	flag.Bool("ssl", false, "listen only on https")
 	flag.Parse()
 
 	if !*logStdOut {

@@ -32,7 +32,14 @@ func (m *HttpHandler) Start() error {
 	http.HandleFunc("/", m.handleIndex)
 	fl := flag.Lookup("http_listen_port")
 	port := fl.Value.String()
-	go http.ListenAndServe(":"+port, nil)
+	res := flag.Lookup("resource").Value.String()
+	ssl := flag.Lookup("ssl").Value.String()
+
+	if ssl == "true" {
+		go http.ListenAndServeTLS(":"+port, res+"/server.crt", res+"/server.key", nil)
+	} else {
+		go http.ListenAndServe(":"+port, nil)
+	}
 	go m.run()
 	return nil
 }
