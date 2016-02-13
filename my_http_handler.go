@@ -58,7 +58,7 @@ func (m *Viki) httpHandler(c chan devicemanager.DeviceData) {
 					log.Printf("recieved unknown object %s", d[0])
 					continue
 				}
-				m.ExecObject("speaker", "Executing command")
+				m.ExecObject("speaker", "I am Executing command")
 
 			case "http_qry":
 				d, _ := got.Data.(string)

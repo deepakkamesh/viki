@@ -23,29 +23,26 @@ type speaker struct {
 }
 
 func (m *speaker) speakFestival(data interface{}) error {
-	var errW, err error
-	r := 3
-
+	var err error
 	text, _ := data.(string)
 	log.Printf("speaking  %s", text)
 
-	// If conn is not initialized, attempt to connect.
-	if m.conn == nil {
-		if m.conn, err = net.DialTimeout("tcp", m.ipPort, time.Duration(2)*time.Second); err != nil {
-			return fmt.Errorf("unable to connect to %s:%s", m.ipPort, err)
+	for r := 3; r > 0; r -= 1 {
+		// If conn is not initialized, attempt to connect.
+		if m.conn == nil {
+			if m.conn, err = net.DialTimeout("tcp", m.ipPort, time.Duration(2)*time.Second); err != nil {
+				return fmt.Errorf("unable to dial festival %s", err)
+			}
 		}
-	}
 
-	// Try to write to socket, if not try to connect and write again.
-	for _, errW = fmt.Fprintf(m.conn, "(tts_text \"%s\" nil)", text); errW != nil && r > 0; r -= 1 {
-		if m.conn, err = net.DialTimeout("tcp", m.ipPort, time.Duration(2)*time.Second); err != nil {
-			return fmt.Errorf("unable to connect to %s:%s", m.ipPort, err)
+		if _, err := fmt.Fprintf(m.conn, "(tts_text \"%s\" nil)", text); err == nil {
+			return nil
 		}
+		// Try to write to socket, if not try to reconnect and write again.
+		m.conn.Close()
+		m.conn = nil
 	}
-	if errW != nil {
-		return fmt.Errorf("unable to write to socket %s:%s", m.ipPort, err)
-	}
-	return nil
+	return fmt.Errorf("unable to speak on festival %s", err)
 }
 
 // On is not implemented.

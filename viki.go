@@ -106,6 +106,10 @@ func (m *Viki) Init(configFile string) error {
 			f:    m.modeSleep,
 			data: make(chan devicemanager.DeviceData, 10),
 		},
+		&UserCode{
+			f:    m.alertManager,
+			data: make(chan devicemanager.DeviceData, 10),
+		},
 	}
 
 	return nil
@@ -149,6 +153,16 @@ func (m *Viki) GetObjectName(address string) string {
 		}
 	}
 	return ""
+}
+
+// GetObject returns the *Object associated with object address.
+func (m *Viki) GetObject(address string) *Object {
+	for _, v := range m.Objects {
+		if v.Address == address {
+			return v
+		}
+	}
+	return nil
 }
 
 // SendToObject sends data to the object.

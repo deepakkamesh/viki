@@ -35,12 +35,12 @@ func (m *mochad) execute(data interface{}, object string) error {
 // read will poll the mochad connection from any data and return one line of data.
 func (m *mochad) runMochadPoll() {
 	var err error
-	re := regexp.MustCompile("(HouseUnit|Addr): (.+) Func: Contact_(.+)_(min|max)_DS10A\n$")
+	re := regexp.MustCompile("(HouseUnit|Addr): (.+) Func: (.+)\n$")
 	for {
 		if m.conn == nil {
 			if m.conn, err = net.DialTimeout("tcp", m.ipPort, time.Duration(5)*time.Second); err != nil {
 				m.err <- fmt.Errorf("unable to connect to mochad %s", err)
-				time.Sleep(5 * time.Second) // Sleep do we dont keep retrying too often.
+				time.Sleep(60 * time.Second) // Sleep do we dont keep retrying too often.
 				continue
 			}
 		}
@@ -54,10 +54,19 @@ func (m *mochad) runMochadPoll() {
 		}
 		matches := re.FindStringSubmatch(buf)
 		if matches != nil {
+
+			// Decode mochad state.
+			state := strings.Trim(matches[3], " ")
+			if strings.Contains(state, "normal") {
+				state = "Closed"
+			} else if strings.Contains(state, "alert") {
+				state = "Open"
+			}
+
 			m.out <- DeviceData{
 				DeviceId: m.deviceId,
 				Object:   strings.Trim(matches[2], " "),
-				Data:     strings.Trim(matches[3], " "),
+				Data:     state,
 			}
 		}
 	}
