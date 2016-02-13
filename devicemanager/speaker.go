@@ -12,7 +12,7 @@ import (
 // Unique Device ID.
 const Device_SPEAKER DeviceId = "speaker"
 
-type Speaker struct {
+type speaker struct {
 	deviceId DeviceId
 	in       chan DeviceData
 	quit     chan struct{}
@@ -22,7 +22,7 @@ type Speaker struct {
 	conn     net.Conn
 }
 
-func (m *Speaker) speakFestival(data interface{}) error {
+func (m *speaker) speakFestival(data interface{}) error {
 	var errW, err error
 	r := 3
 
@@ -49,15 +49,15 @@ func (m *Speaker) speakFestival(data interface{}) error {
 }
 
 // On is not implemented.
-func (m *Speaker) On() {
+func (m *speaker) On() {
 }
 
 // Off is not implemented.
-func (m *Speaker) Off() {
+func (m *speaker) Off() {
 }
 
 // Start initiates the device.
-func (m *Speaker) Start() error {
+func (m *speaker) Start() error {
 	log.Printf("starting device speak...")
 	flag := flag.Lookup("festival_ipport")
 	m.ipPort = flag.Value.String()
@@ -67,7 +67,7 @@ func (m *Speaker) Start() error {
 }
 
 // Execute queues up the requested command to the channel.
-func (m *Speaker) Execute(action interface{}, object string) {
+func (m *speaker) Execute(action interface{}, object string) {
 	m.in <- DeviceData{
 		Data:   action,
 		Object: object,
@@ -75,12 +75,12 @@ func (m *Speaker) Execute(action interface{}, object string) {
 }
 
 // Shutdown terminates the device processing.
-func (m *Speaker) Shutdown() {
+func (m *speaker) Shutdown() {
 	m.quit <- struct{}{}
 }
 
 // run is the main processing loop for the device driver.
-func (m *Speaker) run() {
+func (m *speaker) run() {
 	for {
 		select {
 		case in := <-m.in:

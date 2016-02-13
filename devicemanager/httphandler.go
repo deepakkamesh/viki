@@ -11,7 +11,7 @@ import (
 // Unique Device Number.
 const Device_HTTPHANDLER DeviceId = "httphandler"
 
-type HttpHandler struct {
+type httphandler struct {
 	deviceId DeviceId
 	in       chan DeviceData
 	quit     chan struct{}
@@ -20,12 +20,12 @@ type HttpHandler struct {
 	idxPage  string
 }
 
-func (m *HttpHandler) On() {
+func (m *httphandler) On() {
 }
-func (m *HttpHandler) Off() {
+func (m *httphandler) Off() {
 }
 
-func (m *HttpHandler) Start() error {
+func (m *httphandler) Start() error {
 	log.Printf("starting device HttpHandler...")
 	http.HandleFunc("/object/", m.handleObject)
 	http.HandleFunc("/q/", m.handleQuery)
@@ -44,18 +44,18 @@ func (m *HttpHandler) Start() error {
 	return nil
 }
 
-func (m *HttpHandler) Shutdown() {
+func (m *httphandler) Shutdown() {
 	m.quit <- struct{}{}
 }
 
-func (m *HttpHandler) Execute(action interface{}, object string) {
+func (m *httphandler) Execute(action interface{}, object string) {
 	m.in <- DeviceData{
 		Data:   action,
 		Object: object,
 	}
 }
 
-func (m *HttpHandler) run() {
+func (m *httphandler) run() {
 	for {
 		select {
 		case got := <-m.in:
@@ -68,12 +68,12 @@ func (m *HttpHandler) run() {
 	}
 }
 
-func (m *HttpHandler) handleIndex(w http.ResponseWriter, r *http.Request) {
+func (m *httphandler) handleIndex(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(w, "%s", m.idxPage)
 }
 
-func (m *HttpHandler) handleObject(w http.ResponseWriter, r *http.Request) {
+func (m *httphandler) handleObject(w http.ResponseWriter, r *http.Request) {
 	req := strings.Split(r.URL.Path[1:], "/")
 	if len(req) < 3 {
 		fmt.Fprintf(w, "Error: Use format object/<name>/<cmd>")
@@ -87,7 +87,7 @@ func (m *HttpHandler) handleObject(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", 302)
 }
 
-func (m *HttpHandler) handleQuery(w http.ResponseWriter, r *http.Request) {
+func (m *httphandler) handleQuery(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Path[3:]
 
 	m.out <- DeviceData{

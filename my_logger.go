@@ -15,7 +15,12 @@ func (m *Viki) logger(c chan devicemanager.DeviceData) {
 		// Channel to recieve any events.
 		case got := <-c:
 			d, _ := got.Data.(string)
-			log.Printf("Got data from %s %s\n", got.Object, d)
+			name := m.GetObjectName(got.Object)
+			if name != "" {
+				log.Printf("Got data from %s %s\n", name, d)
+			} else {
+				log.Printf("Got data from %s %s\n", got.Object, d)
+			}
 			// Run other code in default.
 			//default:
 			//m.Objects["ipaddress"].Execute("chil")

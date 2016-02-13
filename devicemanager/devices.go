@@ -49,15 +49,22 @@ func New() *DeviceSettings {
 				err:      errChan,
 				out:      dataChan,
 			},
-			Device_HTTPHANDLER: &HttpHandler{
+			Device_HTTPHANDLER: &httphandler{
 				deviceId: Device_HTTPHANDLER,
 				in:       make(chan DeviceData, 10),
 				quit:     make(chan struct{}),
 				err:      errChan,
 				out:      dataChan,
 			},
-			Device_SPEAKER: &Speaker{
+			Device_SPEAKER: &speaker{
 				deviceId: Device_SPEAKER,
+				in:       make(chan DeviceData, 10),
+				quit:     make(chan struct{}),
+				err:      errChan,
+				out:      dataChan,
+			},
+			Device_MOCHAD: &mochad{
+				deviceId: Device_MOCHAD,
 				in:       make(chan DeviceData, 10),
 				quit:     make(chan struct{}),
 				err:      errChan,
