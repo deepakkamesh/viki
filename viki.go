@@ -110,6 +110,10 @@ func (m *Viki) Init(configFile string) error {
 			f:    m.alertManager,
 			data: make(chan devicemanager.DeviceData, 10),
 		},
+		&UserCode{
+			f:    m.modeMovie,
+			data: make(chan devicemanager.DeviceData, 10),
+		},
 	}
 
 	return nil
