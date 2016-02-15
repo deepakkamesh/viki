@@ -88,7 +88,12 @@ func (o idxtpl) Len() int {
 }
 
 func (o idxtpl) Less(i, j int) bool {
-	return o.Objects[i].Object < o.Objects[j].Object
+
+	if o.Objects[i].Ro == o.Objects[j].Ro {
+		return o.Objects[i].Object < o.Objects[j].Object
+	}
+	// Sort by state Ro or Not.
+	return !o.Objects[i].Ro && o.Objects[j].Ro
 }
 
 func (o idxtpl) Swap(i, j int) {
