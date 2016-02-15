@@ -88,7 +88,7 @@ func (m *httphandler) handleObject(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *httphandler) handleQuery(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Path[3:]
+	q := strings.ToLower(r.URL.Path[3:])
 
 	m.out <- DeviceData{
 		DeviceId: m.deviceId,
