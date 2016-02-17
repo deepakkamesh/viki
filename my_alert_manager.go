@@ -6,7 +6,7 @@ import (
 	"github.com/deepakkamesh/viki/devicemanager"
 )
 
-func (m *Viki) alertManager(c chan devicemanager.DeviceData) {
+func (m *Viki) MyAlertManager(c chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine Alert Manager...")
 

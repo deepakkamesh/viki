@@ -6,7 +6,7 @@ import (
 	"github.com/deepakkamesh/viki/devicemanager"
 )
 
-func (m *Viki) logger(c chan devicemanager.DeviceData) {
+func (m *Viki) MyLogger(c chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine logger...")
 

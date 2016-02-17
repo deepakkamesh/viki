@@ -7,22 +7,23 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"regexp"
 	"strings"
 
 	"github.com/deepakkamesh/viki/devicemanager"
 )
 
-type UserCode struct {
-	f    func(chan devicemanager.DeviceData)
-	data chan devicemanager.DeviceData
+type userChannel struct {
+	fName string                        // Name of method.
+	data  chan devicemanager.DeviceData // Allocated channel.
 }
 
 type Viki struct {
 	Version       int
 	Objects       map[string]*Object
 	DeviceManager *devicemanager.DeviceSettings
-	UserCodes     []*UserCode
+	userChannels  []userChannel
 }
 
 // ReadConfig reads the configuration from configuration file.
@@ -88,33 +89,6 @@ func (m *Viki) Init(configFile string) error {
 	if err := m.readConfig(configFile); err != nil {
 		return fmt.Errorf("config file error %s", err)
 	}
-	// Initiatilze user code.
-	m.UserCodes = []*UserCode{
-		&UserCode{
-			f:    m.timedEvents,
-			data: make(chan devicemanager.DeviceData, 10),
-		},
-		&UserCode{
-			f:    m.httpHandler,
-			data: make(chan devicemanager.DeviceData, 10),
-		},
-		&UserCode{
-			f:    m.logger,
-			data: make(chan devicemanager.DeviceData, 10),
-		},
-		&UserCode{
-			f:    m.modeSleep,
-			data: make(chan devicemanager.DeviceData, 10),
-		},
-		&UserCode{
-			f:    m.alertManager,
-			data: make(chan devicemanager.DeviceData, 10),
-		},
-		&UserCode{
-			f:    m.modeMovie,
-			data: make(chan devicemanager.DeviceData, 10),
-		},
-	}
 
 	return nil
 }
@@ -124,9 +98,21 @@ func (m *Viki) Run() {
 	// Start Device Manager.
 	m.DeviceManager.StartDeviceManager()
 
-	// Start User Code.
-	for _, userCode := range m.UserCodes {
-		go userCode.f(userCode.data)
+	// Start user code.
+	// Uses reflection to enumerate methods starting with My*.
+	typ := reflect.TypeOf(m)
+	for i := 0; i < typ.NumMethod(); i++ {
+		if regexp.MustCompile("^My(.+)").MatchString(typ.Method(i).Name) {
+			recv := make(chan devicemanager.DeviceData, 10)
+			m.userChannels = append(m.userChannels, userChannel{
+				fName: typ.Method(i).Name,
+				data:  recv,
+			})
+
+			go reflect.ValueOf(m).Method(i).Call([]reflect.Value{
+				reflect.ValueOf(recv),
+			})
+		}
 	}
 
 	// Run the main processing loop.
@@ -139,8 +125,8 @@ func (m *Viki) Run() {
 				obj.SetState(got.Data)
 			}
 			// Send event to all user code channels.
-			for _, userCode := range m.UserCodes {
-				userCode.data <- got
+			for _, userChan := range m.userChannels {
+				userChan.data <- got
 			}
 
 		case err := <-m.DeviceManager.Err:
@@ -175,8 +161,8 @@ func (m *Viki) ExecObject(name string, data interface{}) error {
 		obj.Execute(data)
 
 		// Send state change to all user code channels.
-		for _, userCode := range m.UserCodes {
-			userCode.data <- devicemanager.DeviceData{
+		for _, userChan := range m.userChannels {
+			userChan.data <- devicemanager.DeviceData{
 				Data:   data,
 				Object: obj.Address,
 			}

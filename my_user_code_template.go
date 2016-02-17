@@ -1,6 +1,7 @@
 /*
 Try to use the data coming from channel as the trigger and use the objects as conditions
 to do some action.
+This code is a template for writing custom actions
 */
 package viki
 
@@ -10,7 +11,10 @@ import (
 	"github.com/deepakkamesh/viki/devicemanager"
 )
 
-func (m *Viki) userCode(c chan devicemanager.DeviceData) {
+// User code starts with My (note the capitalized M)
+// Viki uses reflection to run any usercode starting with My*.
+// Anything else is ignored.
+func (m *Viki) MyUserCode(c chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine userCode...")
 
@@ -18,11 +22,13 @@ func (m *Viki) userCode(c chan devicemanager.DeviceData) {
 		select {
 		// Channel to recieve any events.
 		case got := <-c:
-			d, _ := got.Data.(string)
-			log.Printf("Got data from %s %s\n", got.Object, d)
+			_ = got
+			//d, _ := got.Data.(string)
+			//log.Printf("Got data from %s %s\n", got.Object, d)
 
-		// Run other code in default.
-		default:
+			// Run other code in default.
+			//default:
+
 			//m.Objects["ipaddress"].Execute("chil")
 		}
 	}

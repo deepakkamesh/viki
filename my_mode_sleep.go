@@ -9,7 +9,7 @@ import (
 	"github.com/deepakkamesh/viki/devicemanager"
 )
 
-func (m *Viki) modeSleep(in chan devicemanager.DeviceData) {
+func (m *Viki) MyModeSleep(in chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine mode sleep handler...")
 
