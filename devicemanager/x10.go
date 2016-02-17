@@ -7,11 +7,9 @@ import (
 	"github.com/deepakkamesh/cm11"
 )
 
-// Unique Device Number.
 const Device_X10 DeviceId = "x10"
 
 type x10 struct {
-	deviceId DeviceId
 	in       chan DeviceData
 	quit     chan struct{}
 	err      chan error
@@ -19,6 +17,19 @@ type x10 struct {
 	cm11     *cm11.Device
 	cm11Data chan cm11.ObjState
 	cm11Err  chan error
+}
+
+// Function to initialize the device.
+// Function called by devicemanager to initialize the device
+func (m *DeviceSettings) NewDeviceX10(out chan DeviceData, err chan error) (DeviceId, Device) {
+	return Device_X10, &x10{
+		in:       make(chan DeviceData, 10),
+		quit:     make(chan struct{}),
+		err:      err,
+		out:      out,
+		cm11Data: make(chan cm11.ObjState),
+		cm11Err:  make(chan error),
+	}
 }
 
 func (m *x10) execute(data interface{}, address string) error {
@@ -37,10 +48,7 @@ func (m *x10) Off() {
 
 func (m *x10) Start() error {
 	log.Printf("starting device cm11...")
-	fl := flag.Lookup("x10_tty")
-	tty := fl.Value.String()
-	m.cm11Data = make(chan cm11.ObjState)
-	m.cm11Err = make(chan error)
+	tty := flag.Lookup("x10_tty").Value.String()
 	m.cm11 = cm11.New(tty, m.cm11Data, m.cm11Err)
 	if err := m.cm11.Init(); err != nil {
 		return err
@@ -69,7 +77,7 @@ func (m *x10) run() {
 		case data := <-m.cm11Data:
 			obj := data.HouseCode + data.DeviceCode // eg. C4
 			m.out <- DeviceData{
-				DeviceId: m.deviceId,
+				DeviceId: Device_X10,
 				Data:     data.FunctionCode,
 				Object:   obj,
 			}

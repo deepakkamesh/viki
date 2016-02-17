@@ -11,11 +11,23 @@ import "log"
 const Device_ANYDEVICE DeviceId = "anydevice"
 
 type anydev struct {
-	deviceId DeviceId
-	in       chan DeviceData
-	quit     chan struct{}
-	err      chan error
-	out      chan DeviceData
+	in   chan DeviceData
+	quit chan struct{}
+	err  chan error
+	out  chan DeviceData
+}
+
+// NewDevice<deviceName> returns a new and initialized anydevice.
+// The function needs to start with NewDevice* for device manager
+// to recognize this as a initializing function. Anything else
+// is ignored.
+func (m *DeviceSettings) newDeviceAnyDevice(out chan DeviceData, err chan error) (DeviceId, Device) {
+	return Device_ANYDEVICE, &anydev{
+		in:   make(chan DeviceData, 10), // Input channel, typically buffered.
+		quit: make(chan struct{}),       // Quit.
+		err:  err,                       // Common error channel.
+		out:  out,                       // Channel to send out data.
+	}
 }
 
 func (m *anydev) execute(data interface{}, object string) error {
@@ -36,7 +48,6 @@ func (m *anydev) Off() {
 	log.Printf("Turn off")
 }
 
-// DONOTCHANGE.
 // Start initiates the device.
 func (m *anydev) Start() error {
 	log.Printf("starting device [name]...")
@@ -45,7 +56,6 @@ func (m *anydev) Start() error {
 	return nil
 }
 
-// DONOTCHANGE.
 // Execute queues up the requested command to the channel.
 func (m *anydev) Execute(action interface{}, object string) {
 	m.in <- DeviceData{
@@ -54,13 +64,11 @@ func (m *anydev) Execute(action interface{}, object string) {
 	}
 }
 
-// DONOTCHANGE.
 // Shutdown terminates the device processing.
 func (m *anydev) Shutdown() {
 	m.quit <- struct{}{}
 }
 
-// DONOTCHANGE.
 // run is the main processing loop for the device driver.
 func (m *anydev) run() {
 	for {

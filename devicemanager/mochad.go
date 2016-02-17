@@ -15,13 +15,22 @@ import (
 const Device_MOCHAD DeviceId = "mochad"
 
 type mochad struct {
-	deviceId DeviceId
-	in       chan DeviceData
-	quit     chan struct{}
-	err      chan error
-	out      chan DeviceData
-	conn     net.Conn
-	ipPort   string
+	in     chan DeviceData
+	quit   chan struct{}
+	err    chan error
+	out    chan DeviceData
+	conn   net.Conn
+	ipPort string
+}
+
+// NewDeviceMochad returns a new and initialized mochad object.
+func (m *DeviceSettings) NewDeviceMochad(out chan DeviceData, err chan error) (DeviceId, Device) {
+	return Device_MOCHAD, &mochad{
+		in:   make(chan DeviceData, 10),
+		quit: make(chan struct{}),
+		err:  err,
+		out:  out,
+	}
 }
 
 // Not implemented.
@@ -64,7 +73,7 @@ func (m *mochad) runMochadPoll() {
 			}
 
 			m.out <- DeviceData{
-				DeviceId: m.deviceId,
+				DeviceId: Device_MOCHAD,
 				Object:   strings.Trim(matches[2], " "),
 				Data:     state,
 			}

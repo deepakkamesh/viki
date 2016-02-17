@@ -1,36 +1,18 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"log"
-	"text/template"
+	"time"
+
+	"github.com/keep94/sunrise"
 )
 
 func main() {
-	type objTpl struct {
-		Object string
-		State  string
-		some   int
-	}
-	st := []objTpl{
-		objTpl{
-			Object: "living",
-			State:  "On",
-		},
-		objTpl{
-			Object: "dinin",
-			State:  "Off",
-		},
-	}
-	tpl, err := template.ParseFiles("/Users/dkg/Projects/golang/src/github.com/deepakkamesh/viki/resources/object.html")
-	if err != nil {
-		log.Printf("Template error %s", err)
-	}
-	buf := new(bytes.Buffer)
-	for _, i := range st {
-		_ = tpl.Execute(buf, i)
-	}
-
-	fmt.Println(buf.String())
+	var s sunrise.Sunrise
+	const LATITUDE = float64(37.416969)
+	const LONGITUDE = float64(-122.051219)
+	s.Around(LATITUDE, LONGITUDE, time.Now())
+	s.AddDays(1)
+	formatStr := "Jan 2 15:04:05"
+	fmt.Printf("Sunrise: %s Sunset: %s\n", s.Sunrise().Format(formatStr), s.Sunset().Format(formatStr))
 }

@@ -12,12 +12,21 @@ import (
 const Device_HTTPHANDLER DeviceId = "httphandler"
 
 type httphandler struct {
-	deviceId DeviceId
-	in       chan DeviceData
-	quit     chan struct{}
-	err      chan error
-	out      chan DeviceData
-	idxPage  string
+	in      chan DeviceData
+	quit    chan struct{}
+	err     chan error
+	out     chan DeviceData
+	idxPage string
+}
+
+// NewDevHttpHandler returns a new initialized http handler.
+func (m *DeviceSettings) NewDeviceHttpHandler(out chan DeviceData, err chan error) (DeviceId, Device) {
+	return Device_HTTPHANDLER, &httphandler{
+		in:   make(chan DeviceData, 10),
+		quit: make(chan struct{}),
+		err:  err,
+		out:  out,
+	}
 }
 
 func (m *httphandler) On() {
@@ -79,7 +88,7 @@ func (m *httphandler) handleObject(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Error: Use format object/<name>/<cmd>")
 	}
 	m.out <- DeviceData{
-		DeviceId: m.deviceId,
+		DeviceId: Device_HTTPHANDLER,
 		Data:     req[1:],
 		Object:   "http_cmd",
 	}
@@ -91,7 +100,7 @@ func (m *httphandler) handleQuery(w http.ResponseWriter, r *http.Request) {
 	q := strings.ToLower(r.URL.Path[3:])
 
 	m.out <- DeviceData{
-		DeviceId: m.deviceId,
+		DeviceId: Device_HTTPHANDLER,
 		Data:     q,
 		Object:   "http_qry",
 	}

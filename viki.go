@@ -108,7 +108,7 @@ func (m *Viki) Run() {
 				fName: typ.Method(i).Name,
 				data:  recv,
 			})
-
+			// Run the user code in a goroutine.
 			go reflect.ValueOf(m).Method(i).Call([]reflect.Value{
 				reflect.ValueOf(recv),
 			})

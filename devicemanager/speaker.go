@@ -13,15 +13,25 @@ import (
 const Device_SPEAKER DeviceId = "speaker"
 
 type speaker struct {
-	deviceId DeviceId
-	in       chan DeviceData
-	quit     chan struct{}
-	err      chan error
-	out      chan DeviceData
-	ipPort   string
-	conn     net.Conn
+	in     chan DeviceData
+	quit   chan struct{}
+	err    chan error
+	out    chan DeviceData
+	ipPort string
+	conn   net.Conn
 }
 
+// NewDeviceSpeaker returns a new and initialized speaker.
+func (m *DeviceSettings) NewDeviceSpeaker(out chan DeviceData, err chan error) (DeviceId, Device) {
+	return Device_SPEAKER, &speaker{
+		in:   make(chan DeviceData, 10),
+		quit: make(chan struct{}),
+		err:  err,
+		out:  out,
+	}
+}
+
+// speakFestival speaks the data on festival.
 func (m *speaker) speakFestival(data interface{}) error {
 	var err error
 	text, _ := data.(string)

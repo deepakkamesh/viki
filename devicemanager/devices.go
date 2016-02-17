@@ -6,7 +6,11 @@ pandora - play electronica
 */
 package devicemanager
 
-import "log"
+import (
+	"log"
+	"reflect"
+	"regexp"
+)
 
 // Define all the device types.
 type DeviceId string
@@ -28,9 +32,9 @@ type DeviceData struct {
 }
 
 type DeviceSettings struct {
-	Devices map[DeviceId]Device
-	Data    chan DeviceData
-	Err     chan error
+	Devices map[DeviceId]Device // map of all the configured devices.
+	Data    chan DeviceData     // channel to receive data from devices
+	Err     chan error          // channel to receive errors from devices
 }
 
 // New initializes a new device manager backend.
@@ -39,41 +43,28 @@ func New() *DeviceSettings {
 	errChan := make(chan error, 10)       // Shared error channel.
 	dataChan := make(chan DeviceData, 10) // Shared data channel.
 
-	// Add new devices here.
-	return &DeviceSettings{
-		Devices: map[DeviceId]Device{
-			Device_X10: &x10{
-				deviceId: Device_X10,
-				in:       make(chan DeviceData, 10),
-				quit:     make(chan struct{}),
-				err:      errChan,
-				out:      dataChan,
-			},
-			Device_HTTPHANDLER: &httphandler{
-				deviceId: Device_HTTPHANDLER,
-				in:       make(chan DeviceData, 10),
-				quit:     make(chan struct{}),
-				err:      errChan,
-				out:      dataChan,
-			},
-			Device_SPEAKER: &speaker{
-				deviceId: Device_SPEAKER,
-				in:       make(chan DeviceData, 10),
-				quit:     make(chan struct{}),
-				err:      errChan,
-				out:      dataChan,
-			},
-			Device_MOCHAD: &mochad{
-				deviceId: Device_MOCHAD,
-				in:       make(chan DeviceData, 10),
-				quit:     make(chan struct{}),
-				err:      errChan,
-				out:      dataChan,
-			},
-		},
-		Data: dataChan,
-		Err:  errChan,
+	deviceSettings := &DeviceSettings{
+		Devices: make(map[DeviceId]Device),
+		Data:    dataChan,
+		Err:     errChan,
 	}
+
+	// Call the initialization function for  devices.
+	typ := reflect.TypeOf(&DeviceSettings{})
+	for i := 0; i < typ.NumMethod(); i++ {
+		if regexp.MustCompile("^NewDevice(.+)").MatchString(typ.Method(i).Name) {
+			ret := reflect.ValueOf(&DeviceSettings{}).Method(i).Call(
+				[]reflect.Value{
+					reflect.ValueOf(dataChan),
+					reflect.ValueOf(errChan),
+				})
+			devId := ret[0].Interface().(DeviceId)
+			dev := ret[1].Interface().(Device)
+			deviceSettings.Devices[devId] = dev
+		}
+	}
+
+	return deviceSettings
 }
 
 // StartDeviceManager starts the devices .
