@@ -7,23 +7,24 @@ import (
 	"time"
 
 	"github.com/deepakkamesh/viki/devicemanager"
-	//	_ "github.com/mattn/go-sqlite3"
-	_ "github.com/mxk/go-sqlite/sqlite3"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func (m *Viki) MyLogger(c chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine logger...")
 	logPath := flag.Lookup("log").Value.String()
-	db, err := sql.Open("sqlite3", logPath+"log.db")
+	db, err := sql.Open("sqlite3", logPath+"/log.db")
 	if err != nil {
-		log.Printf("error opening sqlite db %s", err)
+		log.Printf("error opening sqlite db %s.", err)
+		return
 	}
 	defer db.Close()
 
 	stmt, err := db.Prepare("INSERT INTO logs(tmstmp,object,state) values(?,?,?)")
 	if err != nil {
 		log.Printf("error preparing sql %s", err)
+		return
 	}
 
 	for {
