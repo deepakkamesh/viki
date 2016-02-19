@@ -29,7 +29,8 @@ func (m *Viki) MyTimedEvents(in chan devicemanager.DeviceData) {
 			m.ExecObject("living light", "On")
 			m.ExecObject("dining light", "On")
 			m.ExecObject("patio light", "On")
-			log.Printf("turning on living and dining room lights")
+			m.ExecObject("tv light", "On")
+			log.Printf("turning on evening lights")
 
 		case <-t2200.C:
 			m.ExecObject("patio light", "Off")

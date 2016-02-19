@@ -1,18 +1,24 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
-	"github.com/keep94/sunrise"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
-	var s sunrise.Sunrise
-	const LATITUDE = float64(37.416969)
-	const LONGITUDE = float64(-122.051219)
-	s.Around(LATITUDE, LONGITUDE, time.Now())
-	s.AddDays(1)
-	formatStr := "Jan 2 15:04:05"
-	fmt.Printf("Sunrise: %s Sunset: %s\n", s.Sunrise().Format(formatStr), s.Sunset().Format(formatStr))
+	db, err := sql.Open("sqlite3", "../logs/log.db")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	stmt, err := db.Prepare("INSERT INTO logs(tmstmp,object,state) values(?,?,?)")
+	if err != nil {
+		fmt.Println(err)
+	}
+	if _, err := stmt.Exec(time.Now().Unix(), "living room", 1); err != nil {
+		fmt.Println(err)
+	}
 }
