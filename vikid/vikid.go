@@ -20,6 +20,7 @@ func main() {
 	logStdOut := flag.Bool("log_stdout", true, "log to std out only")
 	flag.String("festival_ipport", "10.0.0.102:1314", "Ip:Port of festival server")
 	flag.String("mochad_ipport", "10.0.0.102:1099", "Ip:Port of mochad server")
+	flag.String("graphite_ipport", "", "Ip:port of graphite server.")
 	flag.String("http_listen_port", "2233", "Port number of the http server")
 	flag.String("x10_tty", "/dev/ttyUSB0", "tty device for x10 controller")
 	flag.String("resource", "./resources", "path to the resources folder")

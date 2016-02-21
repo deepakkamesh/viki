@@ -1,63 +1,89 @@
 package viki
 
 import (
-	"database/sql"
 	"flag"
+	"fmt"
 	"log"
+	"net"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/deepakkamesh/viki/devicemanager"
-	_ "github.com/mattn/go-sqlite3"
 )
+
+const Graphite_PREFIX string = "viki"
 
 func (m *Viki) MyLogger(c chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine logger...")
-	logPath := flag.Lookup("log").Value.String()
-	db, err := sql.Open("sqlite3", logPath+"/log.db")
-	if err != nil {
-		log.Printf("error opening sqlite db %s.", err)
-		return
-	}
-	defer db.Close()
 
-	stmt, err := db.Prepare("INSERT INTO logs(tmstmp,object,state) values(?,?,?)")
-	if err != nil {
-		log.Printf("error preparing sql %s", err)
-		return
-	}
+	graphiteIpPort := flag.Lookup("graphite_ipport").Value.String()
 
 	for {
-		select {
-		// Channel to recieve any events.
-		case got := <-c:
-			// TODO: need to deal with nonstring data.
-			d, _ := got.Data.(string)
-			name := m.GetObjectName(got.Object)
-			if name != "" {
-				log.Printf("Got data from %s %s\n", name, d)
-				// Write to log db.
-				if _, err := stmt.Exec(time.Now().UnixNano(), name, translateState(d)); err != nil {
-					log.Printf("error executing sql %s", err)
-				}
-			} else {
-				log.Printf("Got data from unknown object %s %s\n", got.Object, d)
-			}
+		// Wait to recieve any events.
+		got := <-c
+
+		name, object := m.GetObject(got.Object)
+		// TODO: this might change if type is different.
+		state, ok := got.Data.(string)
+		if !ok {
+			continue
 		}
+
+		if object != nil {
+
+			log.Printf("event: %s(%s),%s", name, got.DeviceId, state)
+
+			// Log to graphite server if enabled.
+			if graphiteIpPort != "" {
+				metricPrefix := Graphite_PREFIX
+				if object.CheckTag("motion") {
+					metricPrefix += ".motion"
+				} else if object.CheckTag("door") {
+					metricPrefix += ".door"
+				} else if object.CheckTag("appliance") {
+					metricPrefix += ".appliance"
+				} else {
+					continue
+				}
+				metric := formatMetric(metricPrefix, name, state)
+				conn, err := net.Dial("tcp", graphiteIpPort)
+				if err != nil {
+					log.Printf("unable to dial graphite %s", err)
+					continue
+				}
+				if _, err := fmt.Fprintf(conn, "%s\n", metric); err != nil {
+					log.Printf("unable to send metric to graphite %s", err)
+				}
+			}
+			continue
+		}
+		log.Printf("Got data from unknown object %s %s\n", got.Object, state)
 	}
 }
 
-func translateState(st string) int {
+func formatMetric(prefix, name, state string) string {
+
+	metric := prefix
+	metric += "." + strings.Replace(name, " ", "_", -1)
+	metric += " " + translateState(state)
+	metric += " " + strconv.FormatInt(time.Now().Unix(), 10)
+
+	return metric
+}
+
+func translateState(st string) string {
 	switch st {
 	case "On":
-		return 1
+		return "1"
 	case "Off":
-		return 0
+		return "0"
 	case "Open":
-		return 1
+		return "1"
 	case "Closed":
-		return 0
+		return "0"
 	default:
-		return 0
+		return "0"
 	}
 }

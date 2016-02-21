@@ -145,14 +145,14 @@ func (m *Viki) GetObjectName(address string) string {
 	return ""
 }
 
-// GetObject returns the *Object associated with object address.
-func (m *Viki) GetObject(address string) *Object {
-	for _, v := range m.Objects {
+// GetObject returns the Object Name and *Object associated with object address.
+func (m *Viki) GetObject(address string) (string, *Object) {
+	for k, v := range m.Objects {
 		if v.Address == address {
-			return v
+			return k, v
 		}
 	}
-	return nil
+	return "", nil
 }
 
 // SendToObject sends data to the object.

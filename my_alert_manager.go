@@ -16,8 +16,7 @@ func (m *Viki) MyAlertManager(c chan devicemanager.DeviceData) {
 		case got := <-c:
 			d, _ := got.Data.(string)
 			if got.DeviceId == "mochad" {
-				if obj := m.GetObject(got.Object); d == "Open" && obj != nil && obj.CheckTag("door") {
-					door := m.GetObjectName(obj.Address)
+				if door, obj := m.GetObject(got.Object); d == "Open" && obj != nil && obj.CheckTag("door") {
 					m.ExecObject("speaker", "Warning "+door+" is open")
 
 				}
