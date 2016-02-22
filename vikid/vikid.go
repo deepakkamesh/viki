@@ -9,15 +9,18 @@ import (
 	"github.com/deepakkamesh/viki"
 )
 
-func main() {
+var (
+	buildtime string
+	githash   string
+)
 
-	v := viki.New()
-	fmt.Println("Starting Viki version:", v.Version)
+func main() {
 
 	// Setup flags.
 	configFile := flag.String("config_file", "objects.conf", "Config file for objects")
 	logFile := flag.String("log_file", "viki.log", "log file path")
 	logStdOut := flag.Bool("log_stdout", true, "log to std out only")
+	version := flag.Bool("version", false, "display version")
 	flag.String("festival_ipport", "10.0.0.102:1314", "Ip:Port of festival server")
 	flag.String("mochad_ipport", "10.0.0.102:1099", "Ip:Port of mochad server")
 	flag.String("graphite_ipport", "", "Ip:port of graphite server.")
@@ -29,6 +32,13 @@ func main() {
 	flag.Float64("long", -122.051219, "longitude coordinate")
 	flag.Bool("ssl", false, "listen only on https")
 	flag.Parse()
+
+	// Print version and exit.
+	if *version {
+		fmt.Printf("Version commit hash %s\n", githash)
+		fmt.Printf("Build date %s\n", buildtime)
+		os.Exit(0)
+	}
 
 	if !*logStdOut {
 		// Setup log file.
@@ -42,6 +52,8 @@ func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
 	// Init and run viki
+	v := viki.New(githash)
+	fmt.Println("Starting Viki version:", v.Version)
 	if err := v.Init(*configFile); err != nil {
 		log.Fatalf("Fatal Error: %s\n", err)
 	}

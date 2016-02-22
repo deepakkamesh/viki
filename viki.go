@@ -20,7 +20,7 @@ type userChannel struct {
 }
 
 type Viki struct {
-	Version       int
+	Version       string
 	Objects       map[string]*Object
 	DeviceManager *devicemanager.DeviceSettings
 	userChannels  []userChannel
@@ -73,9 +73,9 @@ func (m *Viki) readConfig(file string) error {
 	return nil
 }
 
-func New() *Viki {
+func New(ver string) *Viki {
 	return &Viki{
-		Version: 1,
+		Version: ver,
 		Objects: make(map[string]*Object),
 	}
 }
