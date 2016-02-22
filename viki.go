@@ -119,10 +119,10 @@ func (m *Viki) Run() {
 	for {
 		select {
 		case got := <-m.DeviceManager.Data:
-			name := m.GetObjectName(got.Object)
+			_, o := m.GetObject(got.Object)
 			// Set state if object is defined.
-			if obj, ok := m.Objects[name]; ok {
-				obj.SetState(got.Data)
+			if o != nil {
+				o.SetState(got.Data)
 			}
 			// Send event to all user code channels.
 			for _, userChan := range m.userChannels {
@@ -133,16 +133,6 @@ func (m *Viki) Run() {
 			log.Printf("device manager error %s", err)
 		}
 	}
-}
-
-// GetObjectName returns the name associated with object address.
-func (m *Viki) GetObjectName(address string) string {
-	for k, v := range m.Objects {
-		if v.Address == address {
-			return k
-		}
-	}
-	return ""
 }
 
 // GetObject returns the Object Name and *Object associated with object address.

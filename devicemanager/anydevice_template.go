@@ -20,7 +20,7 @@ type anydev struct {
 // NewDevice<deviceName> returns a new and initialized anydevice.
 // The function needs to start with NewDevice* for device manager
 // to recognize this as a initializing function. Anything else
-// is ignored.
+// is ignored. It also has to implement the Device Interface.
 func (m *DeviceSettings) newDeviceAnyDevice(out chan DeviceData, err chan error) (DeviceId, Device) {
 	return Device_ANYDEVICE, &anydev{
 		in:   make(chan DeviceData, 10), // Input channel, typically buffered.
