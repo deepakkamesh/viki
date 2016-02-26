@@ -48,7 +48,7 @@ func (m *Viki) MyLogger(c chan devicemanager.DeviceData) {
 					continue
 				}
 				metric := formatMetric(metricPrefix, name, state)
-				conn, err := net.Dial("tcp", graphiteIpPort, time.Duration(2)*time.Second)
+				conn, err := net.DialTimeout("tcp", graphiteIpPort, time.Duration(2)*time.Second)
 				if err != nil {
 					log.Printf("unable to dial graphite %s", err)
 					continue

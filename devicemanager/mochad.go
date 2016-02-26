@@ -37,7 +37,7 @@ func (m *DeviceSettings) NewDeviceMochad(out chan DeviceData, err chan error) (D
 func (m *mochad) execute(data interface{}, object string) error {
 	// Assert the command data depending on device.
 	d, _ := data.(string)
-	log.Printf("mochad: executing %d on %s", d, object)
+	log.Printf("mochad: executing %s on %s", d, object)
 	return nil
 }
 

@@ -1,3 +1,5 @@
+// +build ignore
+
 /*
 Try to use the data coming from channel as the trigger and use the objects as conditions
 to do some action.
