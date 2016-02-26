@@ -25,14 +25,14 @@ func (m *Viki) MyDpmsControl(c chan devicemanager.DeviceData) {
 			// Got some motion.
 			if o.CheckTag("motion") && d == "On" && !screenOn {
 				// Turn on screen.
-				if err := exec.Command(res + "/dpmson.sh").Run(); err != nil {
+				if err := exec.Command(res + "/dpmsoff.sh").Run(); err != nil {
 					log.Printf("error running dpms off %s ", err)
 					continue
 				}
 				screenOn = true
 				time.AfterFunc(60*time.Minute, func() {
 					// Turn off screen.
-					if err := exec.Command(res + "/dpmsoff.sh").Run(); err != nil {
+					if err := exec.Command(res + "/dpmson.sh").Run(); err != nil {
 						log.Printf("error running dpms on %s", err)
 						return
 					}
