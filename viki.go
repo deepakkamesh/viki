@@ -102,7 +102,7 @@ func (m *Viki) Run() {
 	// Uses reflection to enumerate methods starting with My*.
 	typ := reflect.TypeOf(m)
 	for i := 0; i < typ.NumMethod(); i++ {
-		if regexp.MustCompile("^My(.+)").MatchString(typ.Method(i).Name) {
+		if regexp.MustCompile("^my(.+)").MatchString(typ.Method(i).Name) {
 			recv := make(chan devicemanager.DeviceData, 10)
 			m.userChannels = append(m.userChannels, userChannel{
 				fName: typ.Method(i).Name,
@@ -119,15 +119,17 @@ func (m *Viki) Run() {
 	for {
 		select {
 		case got := <-m.DeviceManager.Data:
-			_, o := m.GetObject(got.Object)
-			// Set state if object is defined.
+			_, o := m.getObject(got.Object)
 			if o != nil {
-				o.SetState(got.Data)
+				// Set state if object is defined.
+				o.setState(got.Data)
+				// Send event to all user code channels.
+				for _, userChan := range m.userChannels {
+					userChan.data <- got
+				}
+				continue
 			}
-			// Send event to all user code channels.
-			for _, userChan := range m.userChannels {
-				userChan.data <- got
-			}
+			log.Printf("object %s does not exit ", got.Object)
 
 		case err := <-m.DeviceManager.Err:
 			log.Printf("device manager error %s", err)
@@ -135,8 +137,8 @@ func (m *Viki) Run() {
 	}
 }
 
-// GetObject returns the Object Name and *Object associated with object address.
-func (m *Viki) GetObject(address string) (string, *Object) {
+// getObject returns the Object Name and *Object associated with object address.
+func (m *Viki) getObject(address string) (string, *Object) {
 	for k, v := range m.Objects {
 		if v.Address == address {
 			return k, v
@@ -145,10 +147,10 @@ func (m *Viki) GetObject(address string) (string, *Object) {
 	return "", nil
 }
 
-// SendToObject sends data to the object.
-func (m *Viki) ExecObject(name string, data interface{}) error {
+// execObject sends data to the object.
+func (m *Viki) execObject(name string, data interface{}) error {
 	if obj, ok := m.Objects[name]; ok {
-		obj.Execute(data)
+		obj.execute(data)
 
 		// Send state change to all user code channels.
 		for _, userChan := range m.userChannels {
@@ -163,7 +165,7 @@ func (m *Viki) ExecObject(name string, data interface{}) error {
 }
 
 // SendToDevice sends data to address on deviceId.
-func (m *Viki) SendToDevice(dev string, address string, data interface{}) error {
+func (m *Viki) sendToDevice(dev string, address string, data interface{}) error {
 	if dev, ok := m.DeviceManager.Devices[devicemanager.DeviceId(dev)]; ok {
 		dev.Execute(data, address)
 		return nil

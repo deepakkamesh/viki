@@ -9,7 +9,7 @@ import (
 	"github.com/deepakkamesh/viki/devicemanager"
 )
 
-func (m *Viki) MyModeMovie(in chan devicemanager.DeviceData) {
+func (m *Viki) myModeMovie(in chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine mode sleep handler...")
 
@@ -20,14 +20,12 @@ func (m *Viki) MyModeMovie(in chan devicemanager.DeviceData) {
 			d, _ := got.Data.(string)
 			if got.Object == "mode_movie" {
 				if d == "On" {
-					m.ExecObject("living light", "Off")
-					m.ExecObject("dining light", "Off")
-					m.ExecObject("tv light", "On")
+					m.execObject("living light", "Off")
+					m.execObject("dining light", "Off")
 				}
 				if d == "Off" {
-					m.ExecObject("living light", "On")
-					m.ExecObject("dining light", "On")
-					m.ExecObject("tv light", "Off")
+					m.execObject("living light", "On")
+					m.execObject("dining light", "On")
 				}
 			}
 		}

@@ -11,7 +11,7 @@ import (
 
 // MyDpmsControl detects motion and turns the display screen on or off
 // on the external display by using dpms shell commands.
-func (m *Viki) MyDpmsControl(c chan devicemanager.DeviceData) {
+func (m *Viki) myDpmsControl(c chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine dpms control...")
 	res := flag.Lookup("resource").Value.String()
@@ -20,10 +20,10 @@ func (m *Viki) MyDpmsControl(c chan devicemanager.DeviceData) {
 		select {
 		case got := <-c:
 			d, _ := got.Data.(string)
-			_, o := m.GetObject(got.Object)
+			_, o := m.getObject(got.Object)
 
 			// Got some motion.
-			if o.CheckTag("motion") && d == "On" && !screenOn {
+			if o.checkTag("motion") && d == "On" && !screenOn {
 				// Turn on screen.
 				if err := exec.Command(res + "/dpmsoff.sh").Run(); err != nil {
 					log.Printf("error running dpms off %s ", err)

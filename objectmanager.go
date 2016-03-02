@@ -22,20 +22,20 @@ func InitObject(address string, device devicemanager.Device, tags []string) *Obj
 }
 
 // Execute calls the underlying device driver to execute command.
-func (m *Object) Execute(data interface{}) {
+func (m *Object) execute(data interface{}) {
 	if m.device != nil {
 		m.device.Execute(data, m.Address)
 	}
-	m.SetState(data)
+	m.setState(data)
 }
 
 // SetState changes state of object.
-func (m *Object) SetState(data interface{}) {
+func (m *Object) setState(data interface{}) {
 	m.State = data
 }
 
 // CheckTag returns true if the tag exists on object.
-func (m *Object) CheckTag(tag string) bool {
+func (m *Object) checkTag(tag string) bool {
 	for _, k := range m.Tags {
 		if k == tag {
 			return true

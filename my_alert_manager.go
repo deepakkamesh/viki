@@ -1,3 +1,5 @@
+// +build ignore
+
 package viki
 
 import (
@@ -6,7 +8,7 @@ import (
 	"github.com/deepakkamesh/viki/devicemanager"
 )
 
-func (m *Viki) MyAlertManager(c chan devicemanager.DeviceData) {
+func (m *Viki) myAlertManager(c chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine Alert Manager...")
 
@@ -14,15 +16,29 @@ func (m *Viki) MyAlertManager(c chan devicemanager.DeviceData) {
 		select {
 		// Channel to recieve any events.
 		case got := <-c:
-			d, _ := got.Data.(string)
-			if got.DeviceId == "mochad" {
-				if door, obj := m.GetObject(got.Object); d == "Open" && obj != nil && obj.CheckTag("door") {
-					m.ExecObject("speaker", "Warning "+door+" is open")
+			name, obj := m.getObject(got.Object)
 
+			// Alerts when we are at home.
+			if m.getModeState("mode away") == "Off" {
+				st := m.getMochadState(name)
+				// If door is opened.
+				if st == "Open" && obj.checkTag("door") {
+					m.execObject("speaker", "Warning "+name+" is open")
+					continue
 				}
-
+				// if motion sensor backyard and door is not open.
+				if st == "On" && name == "backyard_ms1" && m.getMochadState("backyard door") != "Open" {
+					m.execObject("speaker", "Warning backyard motion sensor activated ")
+					continue
+				}
+				// if motion sensor garage and door is not open.
+				if st == "On" && name == "garage_ms1" && m.getMochadState("garage door") != "Open" {
+					m.execObject("speaker", "Warning garage motion sensor activated ")
+					continue
+				}
 			}
 
 		}
+
 	}
 }

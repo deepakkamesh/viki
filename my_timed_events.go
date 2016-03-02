@@ -7,7 +7,7 @@ import (
 )
 
 // Reference Format: Mon Jan 2 15:04:05 -0700 MST 2006
-func (m *Viki) MyTimedEvents(in chan devicemanager.DeviceData) {
+func (m *Viki) myTimedEvents(in chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine timedEvents...")
 	t1700 := NewReminder("1700", "1504") // Ping every 5pm.
@@ -26,14 +26,14 @@ func (m *Viki) MyTimedEvents(in chan devicemanager.DeviceData) {
 
 		// At 5pm.
 		case <-t1700.C:
-			m.ExecObject("living light", "On")
-			m.ExecObject("dining light", "On")
-			m.ExecObject("patio light", "On")
-			m.ExecObject("tv light", "On")
+			m.execObject("living light", "On")
+			m.execObject("dining light", "On")
+			m.execObject("patio light", "On")
+			m.execObject("tv light", "On")
 			log.Printf("turning on evening lights")
 
 		case <-t2200.C:
-			m.ExecObject("patio light", "Off")
+			m.execObject("patio light", "Off")
 
 		}
 	}

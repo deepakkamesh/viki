@@ -13,10 +13,10 @@ import (
 	"github.com/deepakkamesh/viki/devicemanager"
 )
 
-// User code starts with My (note the capitalized M)
-// Viki uses reflection to run any usercode starting with My*.
+// User code starts with "my"
+// Viki uses reflection to run any usercode starting with my*.
 // Anything else is ignored.
-func (m *Viki) MyUserCode(c chan devicemanager.DeviceData) {
+func (m *Viki) myUserCode(c chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine userCode...")
 

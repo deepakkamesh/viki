@@ -14,7 +14,7 @@ import (
 
 const Graphite_PREFIX string = "viki"
 
-func (m *Viki) MyLogger(c chan devicemanager.DeviceData) {
+func (m *Viki) myLogger(c chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine logger...")
 
@@ -24,7 +24,7 @@ func (m *Viki) MyLogger(c chan devicemanager.DeviceData) {
 		// Wait to recieve any events.
 		got := <-c
 
-		name, object := m.GetObject(got.Object)
+		name, object := m.getObject(got.Object)
 		// TODO: this might change if type is different.
 		state, ok := got.Data.(string)
 		if !ok {
@@ -38,11 +38,11 @@ func (m *Viki) MyLogger(c chan devicemanager.DeviceData) {
 			// Log to graphite server if enabled.
 			if graphiteIpPort != "" {
 				metricPrefix := Graphite_PREFIX
-				if object.CheckTag("motion") {
+				if object.checkTag("motion") {
 					metricPrefix += ".motion"
-				} else if object.CheckTag("door") {
+				} else if object.checkTag("door") {
 					metricPrefix += ".door"
-				} else if object.CheckTag("appliance") {
+				} else if object.checkTag("appliance") {
 					metricPrefix += ".appliance"
 				} else {
 					continue

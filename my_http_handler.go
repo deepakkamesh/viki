@@ -13,7 +13,7 @@ import (
 	"github.com/deepakkamesh/viki/devicemanager"
 )
 
-func (m *Viki) MyHttpHandler(c chan devicemanager.DeviceData) {
+func (m *Viki) myHttpHandler(c chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine httphandler...")
 
@@ -46,7 +46,7 @@ func (m *Viki) MyHttpHandler(c chan devicemanager.DeviceData) {
 				log.Printf("build index page failed %s", err)
 				continue
 			}
-			m.SendToDevice("httphandler", "idxpage", idxPage)
+			m.sendToDevice("httphandler", "idxpage", idxPage)
 
 		// Channel to recieve any events.
 		case got := <-c:
@@ -54,7 +54,7 @@ func (m *Viki) MyHttpHandler(c chan devicemanager.DeviceData) {
 			case "http_cmd":
 				d, _ := got.Data.([]string)
 				state := sanitizeState(d[1])
-				if err := m.ExecObject(d[0], state); err != nil {
+				if err := m.execObject(d[0], state); err != nil {
 					log.Printf("recieved unknown object %s", d[0])
 					continue
 				}
@@ -65,7 +65,7 @@ func (m *Viki) MyHttpHandler(c chan devicemanager.DeviceData) {
 				res := matchObject(objs, d)
 				if act, err := matchAction(d); err == nil {
 					for _, i := range res {
-						m.ExecObject(i.object, act)
+						m.execObject(i.object, act)
 					}
 				}
 			}
@@ -109,7 +109,7 @@ func buildIndexPage(o map[string]*Object, tplIdx *template.Template) (string, er
 
 	// Add object to list if its not hidden.
 	for k, v := range o {
-		if !v.CheckTag("web_hidden") {
+		if !v.checkTag("web_hidden") {
 			state := "NA"
 			if v.State != nil {
 				state = v.State.(string)
@@ -117,7 +117,7 @@ func buildIndexPage(o map[string]*Object, tplIdx *template.Template) (string, er
 			objs.Objects = append(objs.Objects, objtpl{
 				Object: k,
 				State:  state,
-				Ro:     v.CheckTag("web_ro"),
+				Ro:     v.checkTag("web_ro"),
 			})
 		}
 	}
