@@ -13,7 +13,7 @@ import (
 	"github.com/deepakkamesh/viki/devicemanager"
 )
 
-func (m *Viki) myHttpHandler(c chan devicemanager.DeviceData) {
+func (m *Viki) MyHttpHandler(c chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine httphandler...")
 

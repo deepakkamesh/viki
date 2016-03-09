@@ -1,5 +1,3 @@
-// +build ignore
-
 package viki
 
 import (
@@ -8,7 +6,7 @@ import (
 	"github.com/deepakkamesh/viki/devicemanager"
 )
 
-func (m *Viki) myAlertManager(c chan devicemanager.DeviceData) {
+func (m *Viki) MyAlertManager(c chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine Alert Manager...")
 
@@ -26,6 +24,7 @@ func (m *Viki) myAlertManager(c chan devicemanager.DeviceData) {
 					m.execObject("speaker", "Warning "+name+" is open")
 					continue
 				}
+				/*TODO - Throttle warning to no more than once every 5s.
 				// if motion sensor backyard and door is not open.
 				if st == "On" && name == "backyard_ms1" && m.getMochadState("backyard door") != "Open" {
 					m.execObject("speaker", "Warning backyard motion sensor activated ")
@@ -36,6 +35,7 @@ func (m *Viki) myAlertManager(c chan devicemanager.DeviceData) {
 					m.execObject("speaker", "Warning garage motion sensor activated ")
 					continue
 				}
+				*/
 			}
 
 		}

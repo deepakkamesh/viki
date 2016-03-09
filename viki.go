@@ -102,7 +102,7 @@ func (m *Viki) Run() {
 	// Uses reflection to enumerate methods starting with My*.
 	typ := reflect.TypeOf(m)
 	for i := 0; i < typ.NumMethod(); i++ {
-		if regexp.MustCompile("^my(.+)").MatchString(typ.Method(i).Name) {
+		if regexp.MustCompile("^My(.+)").MatchString(typ.Method(i).Name) {
 			recv := make(chan devicemanager.DeviceData, 10)
 			m.userChannels = append(m.userChannels, userChannel{
 				fName: typ.Method(i).Name,

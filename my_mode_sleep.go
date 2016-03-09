@@ -9,7 +9,7 @@ import (
 /* MyModeSleep will turn off the lights and if there is any motion within the living
 room, turn on the living room lights. If there is any external motion, trigger alarm
 */
-func (m *Viki) myModeSleep(in chan devicemanager.DeviceData) {
+func (m *Viki) MyModeSleep(in chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine mode sleep handler...")
 

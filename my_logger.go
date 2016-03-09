@@ -14,7 +14,7 @@ import (
 
 const Graphite_PREFIX string = "viki"
 
-func (m *Viki) myLogger(c chan devicemanager.DeviceData) {
+func (m *Viki) MyLogger(c chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine logger...")
 
