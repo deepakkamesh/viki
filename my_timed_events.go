@@ -10,7 +10,7 @@ import (
 func (m *Viki) MyTimedEvents(in chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine timedEvents...")
-	t1700 := NewReminder("1700", "1504") // Ping every 5pm.
+	t1900 := NewReminder("1900", "1504") // Ping every 5pm.
 	t2200 := NewReminder("2200", "1504") // Ping every 10pm.
 	t2000 := NewReminder("2000", "1504") // Ping every 8pm.
 	t0100 := NewReminder("0100", "1504") // Ping every 1am.
@@ -27,16 +27,17 @@ func (m *Viki) MyTimedEvents(in chan devicemanager.DeviceData) {
 		case <-in:
 
 		// At 5pm.
-		case <-t1700.C:
+		case <-t1900.C:
 			m.execObject("living light", "On")
 			m.execObject("dining light", "On")
 			m.execObject("patio light", "On")
 			m.execObject("tv light", "On")
 			log.Printf("turning on evening lights")
 		case <-t2000.C:
-			m.execObject("bedroom light","On")
+			m.execObject("bedroom light", "On")
 		case <-t0100.C:
-			m.execObject("heater","Off")
+			m.execObject("tv light", "Off")
+			m.execObject("heater", "Off")
 		case <-t2200.C:
 			m.execObject("patio light", "Off")
 
