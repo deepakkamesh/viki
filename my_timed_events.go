@@ -37,7 +37,6 @@ func (m *Viki) MyTimedEvents(in chan devicemanager.DeviceData) {
 			m.execObject("bedroom light", "On")
 		case <-t0100.C:
 			m.execObject("tv light", "Off")
-			m.execObject("heater", "Off")
 		case <-t2200.C:
 			m.execObject("patio light", "Off")
 
