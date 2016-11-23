@@ -5,6 +5,7 @@ import (
 	"github.com/deepakkamesh/viki/devicemanager"
 	"github.com/mailgun/mailgun-go"
 	"log"
+	"time"
 )
 
 func (m *Viki) MyAlertManager(c chan devicemanager.DeviceData) {
@@ -17,23 +18,46 @@ func (m *Viki) MyAlertManager(c chan devicemanager.DeviceData) {
 		select {
 		// Channel to recieve any events.
 		case got := <-c:
-			name, _ := m.getObject(got.Object)
+			name, obj := m.getObject(got.Object)
 
 			// Alerts when we are not at home.
 			if m.getModeState("mode vacation") == "On" {
 				st := m.getMochadState(name)
 				// Motion inside.
-				if st == "On" && (name == "dining_ms1" || name == "living_ms1" || name == "bedroom_ms1") {
+				//if st == "On" && (name == "dining_ms1" || name == "living_ms1" || name == "bedroom_ms1") {
+				if st == "On" && obj.checkTag("indoor_motion") {
 					msg := fmt.Sprintf("Detected motion in %s", name)
 					quickMail("deepak.kamesh@gmail.com", msg, mg)
 					quickMail("6024050044@tmomail.net", msg, mg)
+					// Turn on the living room light for a bit.
+					m.execObject("living light", "On")
+					m.execObject("dining light", "On")
+					m.execObject("buzzer", "On")
+					time.AfterFunc(3*time.Minute, func() {
+						m.execObject("living light", "Off")
+						m.execObject("dining light", "Off")
+						m.execObject("buzzer", "Off")
+					})
+
 					continue
 				}
 				// Doors opened.
-				if st == "Open" && (name == "backyard door" || name == "garage door" || name == "front door") {
+				//if st == "Open" && (name == "backyard door" || name == "garage door" || name == "front door") {
+				if st == "Open" && obj.checkTag("door") {
 					msg := fmt.Sprintf("%s Open", name)
 					quickMail("deepak.kamesh@gmail.com", msg, mg)
 					quickMail("6024050044@tmomail.net", msg, mg)
+					continue
+					// for a bit.
+					m.execObject("living light", "On")
+					m.execObject("dining light", "On")
+					m.execObject("buzzer", "On")
+					time.AfterFunc(3*time.Minute, func() {
+						m.execObject("living light", "Off")
+						m.execObject("dining light", "Off")
+						m.execObject("buzzer", "Off")
+					})
+
 					continue
 				}
 
@@ -52,7 +76,6 @@ func (m *Viki) MyAlertManager(c chan devicemanager.DeviceData) {
 			*/
 
 		}
-
 	}
 }
 
