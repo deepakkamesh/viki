@@ -41,11 +41,17 @@ func (m *Viki) MyTimedEvents(in chan devicemanager.DeviceData) {
 			m.execObject("tv light", "On")
 			log.Printf("turning on evening lights")
 		case <-t2000.C:
-			m.execObject("bedroom light", "On")
+			if m.getModeState("mode vacation") == "Off" {
+				m.execObject("bedroom light", "On")
+			}
 		case <-t2200.C:
-			m.execObject("patio light", "Off")
+			if m.getModeState("mode vacation") == "Off" {
+				m.execObject("patio light", "Off")
+			}
 			m.execObject("living light", "Off")
-
+			if m.getModeState("mode vacation") == "On" {
+				m.execObject("dining light", "Off")
+			}
 		}
 	}
 }
