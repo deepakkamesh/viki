@@ -10,7 +10,27 @@ import (
 	"time"
 )
 
-// Fullfillment Request.
+// Google Home Fullfillment Response.
+type PermissionsRequest struct {
+	OptContext  string   `json:"opt_context"`
+	Permissions []string `json:"permissions"`
+}
+type Google struct {
+	ExpectUserResponse bool               `json:"expect_user_response"`
+	IsSsml             bool               `json:"is_ssml"`
+	PermissionsRequest PermissionsRequest `json:"permissions_request"`
+}
+type Data struct {
+	Google Google `json:"google"`
+}
+type FulfillmentResponse struct {
+	Speech      string `json:"speech"`
+	DisplayText string `json:"displayText"`
+	Data        Data   `json:"data"`
+	Source      string `json:"source"`
+}
+
+// Google Home Fullfillment Request.
 type FulfillmentRequest struct {
 	ID        string    `json:"id"`
 	Timestamp time.Time `json:"timestamp"`
@@ -120,6 +140,42 @@ func (m *httphandler) handleGoogleHome(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
 		log.Printf("Failed to decode json fulfllment request")
 	}
+
+	log.Printf("Got request from google home %v", msg.Result.Parameters)
+	object := msg.Result.Parameters.Object
+	state := msg.Result.Parameters.State
+
+	m.out <- DeviceData{
+		DeviceId: Device_HTTPHANDLER,
+		Data:     []string{object, state},
+		Object:   "http_cmd",
+	}
+
+	// Build a response back.
+	resp := FulfillmentResponse{
+		Speech:      "Ok,I have turned " + state + " the " + object,
+		DisplayText: "Ok,All Done",
+		Data: Data{
+			Google{
+				ExpectUserResponse: false,
+				IsSsml:             false,
+				PermissionsRequest: PermissionsRequest{
+					OptContext:  "",
+					Permissions: []string{},
+				},
+			},
+		},
+		Source: "Viki",
+	}
+
+	b, err := json.Marshal(resp)
+	if err != nil {
+		log.Fatalf("Failed to marshal response: %v", err)
+	}
+
+	w.Header().Set("Content-type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(b)
 
 }
 

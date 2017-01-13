@@ -1,5 +1,4 @@
 #!/bin/sh
-
 LOC=$(dirname "$0")
 
 $LOC/vikid \
