@@ -160,7 +160,7 @@ func (m *httphandler) handleGoogleHome(w http.ResponseWriter, r *http.Request) {
 		DisplayText: "Ok,All Done",
 		Data: Data{
 			Google{
-				ExpectUserResponse: true,
+				ExpectUserResponse: false,
 				IsSsml:             false,
 			},
 		},
