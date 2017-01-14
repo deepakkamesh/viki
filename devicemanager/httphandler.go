@@ -16,18 +16,19 @@ type PermissionsRequest struct {
 	Permissions []string `json:"permissions"`
 }
 type Google struct {
-	ExpectUserResponse bool               `json:"expect_user_response"`
-	IsSsml             bool               `json:"is_ssml"`
-	PermissionsRequest PermissionsRequest `json:"permissions_request"`
+	ExpectUserResponse bool `json:"expect_user_response"`
+	IsSsml             bool `json:"is_ssml"`
+	//	PermissionsRequest PermissionsRequest `json:"permissions_request"` // Only needed if there are perms.
 }
 type Data struct {
 	Google Google `json:"google"`
 }
 type FulfillmentResponse struct {
-	Speech      string `json:"speech"`
-	DisplayText string `json:"displayText"`
-	Data        Data   `json:"data"`
-	Source      string `json:"source"`
+	Speech      string   `json:"speech"`
+	DisplayText string   `json:"displayText"`
+	Data        Data     `json:"data"`
+	ContextOut  []string `json:"contextOut"`
+	Source      string   `json:"source"`
 }
 
 // Google Home Fullfillment Request.
@@ -135,6 +136,8 @@ func (m *httphandler) run() {
 }
 
 // handleGoogleHome is the http handler for Google Home integration.
+// Google Home integration works via api.ai. Any new objects/states should
+// be configured within api.ai as well.
 func (m *httphandler) handleGoogleHome(w http.ResponseWriter, r *http.Request) {
 	var msg FulfillmentRequest
 	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
@@ -153,19 +156,16 @@ func (m *httphandler) handleGoogleHome(w http.ResponseWriter, r *http.Request) {
 
 	// Build a response back.
 	resp := FulfillmentResponse{
-		Speech:      "Ok,I have turned " + state + " the " + object,
+		Speech:      "Ok,I have turned " + state + " " + object,
 		DisplayText: "Ok,All Done",
 		Data: Data{
 			Google{
-				ExpectUserResponse: false,
+				ExpectUserResponse: true,
 				IsSsml:             false,
-				PermissionsRequest: PermissionsRequest{
-					OptContext:  "",
-					Permissions: []string{},
-				},
 			},
 		},
-		Source: "Viki",
+		ContextOut: []string{},
+		Source:     "Viki",
 	}
 
 	b, err := json.Marshal(resp)
@@ -174,9 +174,9 @@ func (m *httphandler) handleGoogleHome(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-type", "application/json")
+	w.Header().Set("Google-Assistant-API-Version", "v1")
 	w.WriteHeader(http.StatusOK)
 	w.Write(b)
-
 }
 
 // handleIndex is the http handler for the index page.
