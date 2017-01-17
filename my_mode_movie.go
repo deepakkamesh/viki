@@ -22,10 +22,12 @@ func (m *Viki) MyModeMovie(in chan devicemanager.DeviceData) {
 				if d == "On" {
 					m.execObject("living light", "Off")
 					m.execObject("dining light", "Off")
+					m.execObject("tv light", "On")
 				}
 				if d == "Off" {
 					m.execObject("living light", "On")
 					m.execObject("dining light", "On")
+					m.execObject("tv light", "Off")
 				}
 			}
 		}

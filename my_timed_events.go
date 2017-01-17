@@ -38,7 +38,7 @@ func (m *Viki) MyTimedEvents(in chan devicemanager.DeviceData) {
 			m.execObject("living light", "On")
 			m.execObject("dining light", "On")
 			m.execObject("patio light", "On")
-			m.execObject("tv light", "On")
+			m.execObject("tv light", "Off")
 			log.Printf("turning on evening lights")
 		case <-t2000.C:
 			if m.getModeState("mode vacation") == "Off" {

@@ -24,7 +24,6 @@ func (m *Viki) MyAlertManager(c chan devicemanager.DeviceData) {
 			if m.getModeState("mode vacation") == "On" {
 				st := m.getMochadState(name)
 				// Motion inside.
-				//if st == "On" && (name == "dining_ms1" || name == "living_ms1" || name == "bedroom_ms1") {
 				if st == "On" && obj.checkTag("indoor_motion") {
 					msg := fmt.Sprintf("Detected motion in %s", name)
 					quickMail("deepak.kamesh@gmail.com", msg, mg)
@@ -38,16 +37,13 @@ func (m *Viki) MyAlertManager(c chan devicemanager.DeviceData) {
 						m.execObject("dining light", "Off")
 						m.execObject("buzzer", "Off")
 					})
-
 					continue
 				}
 				// Doors opened.
-				//if st == "Open" && (name == "backyard door" || name == "garage door" || name == "front door") {
 				if st == "Open" && obj.checkTag("door") {
 					msg := fmt.Sprintf("%s Open", name)
 					quickMail("deepak.kamesh@gmail.com", msg, mg)
 					quickMail("6024050044@tmomail.net", msg, mg)
-					continue
 					// for a bit.
 					m.execObject("living light", "On")
 					m.execObject("dining light", "On")
@@ -57,24 +53,9 @@ func (m *Viki) MyAlertManager(c chan devicemanager.DeviceData) {
 						m.execObject("dining light", "Off")
 						m.execObject("buzzer", "Off")
 					})
-
 					continue
 				}
-
 			}
-			/*TODO - Throttle warning to no more than once every 5s.
-			// if motion sensor backyard and door is not open.
-			if st == "On" && name == "backyard_ms1" && m.getMochadState("backyard door") != "Open" {
-				m.execObject("speaker", "Warning backyard motion sensor activated ")
-				continue
-			}
-			// if motion sensor garage and door is not open.
-			if st == "On" && name == "garage_ms1" && m.getMochadState("garage door") != "Open" {
-				m.execObject("speaker", "Warning garage motion sensor activated ")
-				continue
-			}
-			*/
-
 		}
 	}
 }
