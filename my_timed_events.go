@@ -10,7 +10,7 @@ import (
 func (m *Viki) MyTimedEvents(in chan devicemanager.DeviceData) {
 
 	log.Printf("starting user routine timedEvents...")
-	t1700 := NewReminder("1700", "1504") // Ping every 5pm.
+	t1900 := NewReminder("1900", "1504") // Ping every 5pm.
 	t2200 := NewReminder("2200", "1504") // Ping every 10pm.
 	t2000 := NewReminder("2000", "1504") // Ping every 8pm.
 	t0500 := NewReminder("0500", "1504") // Ping every 5am.
