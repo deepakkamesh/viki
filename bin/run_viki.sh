@@ -8,6 +8,6 @@ $LOC/vikid \
 -graphite_ipport=metrics.hyperlinkhome.com:2003 \
 -resource=$LOC/../resources \
 -log_stdout=true \
--log_file=$LOC/../logs/viki.log 
+-log_file=$LOC/../logs/viki.log
 #&
 #-ssl \
