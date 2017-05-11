@@ -1,14 +1,10 @@
 package viki
 
 import (
-	"bytes"
-	"flag"
 	"fmt"
 	"log"
 	"sort"
 	"strings"
-	"text/template"
-	"time"
 
 	"github.com/deepakkamesh/viki/devicemanager"
 )
@@ -19,35 +15,15 @@ func (m *Viki) MyHttpHandler(c chan devicemanager.DeviceData) {
 
 	// Build object list for nlp.
 	objs := []*nlpMatch{}
-	for k, _ := range m.Objects {
+	for _, o := range m.ObjectManager.Objects {
 		objs = append(objs, &nlpMatch{
-			object: k,
+			object: o.Name,
 			weight: 0,
 		})
 	}
 
-	// Read the templates.
-	var res string
-	fl := flag.Lookup("resource")
-	res = fl.Value.String()
-
-	tplIdx, err := template.ParseFiles(res + "/index.html")
-	if err != nil {
-		log.Fatalf("error reading file %s", err)
-	}
-	tick := time.NewTicker(2 * time.Second)
-
 	for {
 		select {
-		case <-tick.C:
-			// Build and send objects and state to http device.
-			idxPage, err := buildIndexPage(m.Objects, tplIdx)
-			if err != nil {
-				log.Printf("build index page failed %s", err)
-				continue
-			}
-			m.sendToDevice("httphandler", "idxpage", idxPage)
-
 		// Channel to recieve any events.
 		case got := <-c:
 			switch got.Object {
@@ -55,7 +31,7 @@ func (m *Viki) MyHttpHandler(c chan devicemanager.DeviceData) {
 				d, _ := got.Data.([]string)
 				state := sanitizeState(d[1])
 				if err := m.execObject(d[0], state); err != nil {
-					log.Printf("recieved unknown object %s", d[0])
+					log.Printf("recieved unknown object %s %v", d[0], err)
 					continue
 				}
 			//	m.ExecObject("speaker", "I am Executing command")
@@ -71,62 +47,6 @@ func (m *Viki) MyHttpHandler(c chan devicemanager.DeviceData) {
 			}
 		}
 	}
-}
-
-/* Building the index page */
-type objtpl struct {
-	Object string
-	State  string
-	Ro     bool
-}
-type idxtpl struct {
-	Objects []objtpl
-}
-
-func (o idxtpl) Len() int {
-	return len(o.Objects)
-}
-
-func (o idxtpl) Less(i, j int) bool {
-
-	if o.Objects[i].Ro == o.Objects[j].Ro {
-		return o.Objects[i].Object < o.Objects[j].Object
-	}
-	// Sort by state Ro or Not.
-	return !o.Objects[i].Ro && o.Objects[j].Ro
-}
-
-func (o idxtpl) Swap(i, j int) {
-	o.Objects[i], o.Objects[j] = o.Objects[j], o.Objects[i]
-}
-
-// buildIndexPage constructs the index page for the web interface.
-func buildIndexPage(o map[string]*Object, tplIdx *template.Template) (string, error) {
-
-	objs := idxtpl{}
-
-	buf := new(bytes.Buffer)
-
-	// Add object to list if its not hidden.
-	for k, v := range o {
-		if !v.checkTag("web_hidden") {
-			state := "NA"
-			if v.State != nil {
-				state = v.State.(string)
-			}
-			objs.Objects = append(objs.Objects, objtpl{
-				Object: k,
-				State:  state,
-				Ro:     v.checkTag("web_ro"),
-			})
-		}
-	}
-	sort.Sort(objs)
-	if err := tplIdx.Execute(buf, objs); err != nil {
-		return "", fmt.Errorf("error parsing template %s", err)
-	}
-
-	return buf.String(), nil
 }
 
 /* Natural Language Processing */

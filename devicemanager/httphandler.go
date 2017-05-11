@@ -1,13 +1,19 @@
 package devicemanager
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
+
+	"github.com/deepakkamesh/viki/devicemanager/device"
+	"github.com/deepakkamesh/viki/objectmanager"
 )
 
 // Google Home Fullfillment Response.
@@ -69,20 +75,21 @@ type FulfillmentRequest struct {
 const Device_HTTPHANDLER DeviceId = "httphandler"
 
 type httphandler struct {
-	in      chan DeviceData
-	quit    chan struct{}
-	err     chan error
-	out     chan DeviceData
-	idxPage string
+	in   chan DeviceData
+	quit chan struct{}
+	err  chan error
+	out  chan DeviceData
+	om   *objectmanager.ObjectManager
 }
 
 // NewDevHttpHandler returns a new initialized http handler.
-func (m *DeviceSettings) NewDeviceHttpHandler(out chan DeviceData, err chan error) (DeviceId, Device) {
+func (m *DeviceSettings) NewDeviceHttpHandler(out chan DeviceData, err chan error, om *objectmanager.ObjectManager) (DeviceId, device.Device) {
 	return Device_HTTPHANDLER, &httphandler{
 		in:   make(chan DeviceData, 10),
 		quit: make(chan struct{}),
 		err:  err,
 		out:  out,
+		om:   om,
 	}
 }
 
@@ -125,14 +132,89 @@ func (m *httphandler) Execute(action interface{}, object string) {
 func (m *httphandler) run() {
 	for {
 		select {
-		case got := <-m.in:
-			if got.Object == "idxpage" {
-				m.idxPage = got.Data.(string)
-			}
+		case <-m.in:
 		case <-m.quit:
 			return
 		}
 	}
+}
+
+/* Building the index page */
+type objtpl struct {
+	Object string
+	State  string
+	Ro     bool
+}
+type idxtpl struct {
+	Objects []objtpl
+}
+
+func (o idxtpl) Len() int {
+	return len(o.Objects)
+}
+
+func (o idxtpl) Less(i, j int) bool {
+
+	if o.Objects[i].Ro == o.Objects[j].Ro {
+		return o.Objects[i].Object < o.Objects[j].Object
+	}
+	// Sort by state Ro or Not.
+	return !o.Objects[i].Ro && o.Objects[j].Ro
+}
+
+func (o idxtpl) Swap(i, j int) {
+	o.Objects[i], o.Objects[j] = o.Objects[j], o.Objects[i]
+}
+
+// buildIndexPage constructs the index page for the web interface.
+func buildIndexPage(o []*objectmanager.Object, tplIdx *template.Template) (string, error) {
+
+	objs := idxtpl{}
+
+	buf := new(bytes.Buffer)
+
+	// Add object to list if its not hidden.
+	for _, v := range o {
+		if !v.CheckTag("web_hidden") {
+			state := "NA"
+			if v.State != nil {
+				state = v.State.(string)
+			}
+			objs.Objects = append(objs.Objects, objtpl{
+				Object: v.Name,
+				State:  state,
+				Ro:     v.CheckTag("web_ro"),
+			})
+		}
+	}
+	sort.Sort(objs)
+	if err := tplIdx.Execute(buf, objs); err != nil {
+		return "", fmt.Errorf("error parsing template %s", err)
+	}
+
+	return buf.String(), nil
+}
+
+// handleIndex is the http handler for the index page.
+func (m *httphandler) handleIndex(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+
+	// Read the templates.
+	var res string
+	fl := flag.Lookup("resource")
+	res = fl.Value.String()
+
+	tplIdx, err := template.ParseFiles(res + "/index.html")
+	if err != nil {
+		log.Fatalf("error reading file %s", err)
+	}
+	// Build and send objects and state to http device.
+	idxPage, err := buildIndexPage(m.om.Objects, tplIdx)
+	if err != nil {
+		log.Printf("build index page failed %s", err)
+	}
+
+	fmt.Fprintf(w, "%s", idxPage)
 }
 
 // handleGoogleHome is the http handler for Google Home integration.
@@ -177,12 +259,6 @@ func (m *httphandler) handleGoogleHome(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Google-Assistant-API-Version", "v1")
 	w.WriteHeader(http.StatusOK)
 	w.Write(b)
-}
-
-// handleIndex is the http handler for the index page.
-func (m *httphandler) handleIndex(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprintf(w, "%s", m.idxPage)
 }
 
 // handleObject is the http handler for the object command.

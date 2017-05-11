@@ -1,4 +1,3 @@
-// +build ignore
 package viki
 
 import (
@@ -21,10 +20,10 @@ func (m *Viki) DEPRECATED_myDpmsControl(c chan devicemanager.DeviceData) {
 		select {
 		case got := <-c:
 			d, _ := got.Data.(string)
-			_, o := m.getObject(got.Object)
+			_, o := m.ObjectManager.GetObjectByAddress(got.Object)
 
 			// Got some motion.
-			if o.checkTag("motion") && d == "On" && !screenOn {
+			if o.CheckTag("motion") && d == "On" && !screenOn {
 				// Turn on screen.
 				if err := exec.Command(res + "/dpmsoff.sh").Run(); err != nil {
 					log.Printf("error running dpms off %s ", err)

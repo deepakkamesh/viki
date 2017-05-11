@@ -2,10 +2,11 @@ package viki
 
 import (
 	"fmt"
-	"github.com/deepakkamesh/viki/devicemanager"
-	"github.com/mailgun/mailgun-go"
 	"log"
 	"time"
+
+	"github.com/deepakkamesh/viki/devicemanager"
+	"github.com/mailgun/mailgun-go"
 )
 
 func (m *Viki) MyAlertManager(c chan devicemanager.DeviceData) {
@@ -18,13 +19,13 @@ func (m *Viki) MyAlertManager(c chan devicemanager.DeviceData) {
 		select {
 		// Channel to recieve any events.
 		case got := <-c:
-			name, obj := m.getObject(got.Object)
+			name, obj := m.ObjectManager.GetObjectByAddress(got.Object)
 
 			// Alerts when we are not at home.
 			if m.getModeState("mode vacation") == "On" {
 				st := m.getMochadState(name)
 				// Motion inside.
-				if st == "On" && obj.checkTag("indoor_motion") {
+				if st == "On" && obj.CheckTag("indoor_motion") {
 					msg := fmt.Sprintf("Detected motion in %s", name)
 					quickMail("deepak.kamesh@gmail.com", msg, mg)
 					quickMail("6024050044@tmomail.net", msg, mg)
@@ -40,7 +41,7 @@ func (m *Viki) MyAlertManager(c chan devicemanager.DeviceData) {
 					continue
 				}
 				// Doors opened.
-				if st == "Open" && obj.checkTag("door") {
+				if st == "Open" && obj.CheckTag("door") {
 					msg := fmt.Sprintf("%s Open", name)
 					quickMail("deepak.kamesh@gmail.com", msg, mg)
 					quickMail("6024050044@tmomail.net", msg, mg)

@@ -21,7 +21,7 @@ func (m *Viki) MyModeSleep(in chan devicemanager.DeviceData) {
 		select {
 		// Channel to recieve any events.
 		case got := <-in:
-			name, obj := m.getObject(got.Object)
+			name, obj := m.ObjectManager.GetObjectByAddress(got.Object)
 			st := m.getMochadState(name)
 			if got.Object == "mode_sleep" && st == "On" {
 				m.execObject("living light", "Off")
@@ -32,7 +32,7 @@ func (m *Viki) MyModeSleep(in chan devicemanager.DeviceData) {
 
 			if m.getModeState("mode sleep") == "On" {
 				// Setup some alerting when sleeping.
-				if st == "Open" && obj.checkTag("door") {
+				if st == "Open" && obj.CheckTag("door") {
 					msg := fmt.Sprintf("%s Open", name)
 					quickMail("deepak.kamesh@gmail.com", msg, mg)
 					quickMail("6024050044@tmomail.net", msg, mg)
@@ -51,7 +51,7 @@ func (m *Viki) MyModeSleep(in chan devicemanager.DeviceData) {
 				}
 
 				// Setup automatic turn on of lights.
-				if st == "On" && obj.checkTag("indoor_motion") {
+				if st == "On" && obj.CheckTag("indoor_motion") {
 					// Turn on the living room light for a bit.
 					m.execObject("living light", "On")
 					time.AfterFunc(3*time.Minute, func() {

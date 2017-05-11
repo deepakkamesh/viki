@@ -14,7 +14,7 @@ func (m *Viki) MyRemoteCode(c chan devicemanager.DeviceData) {
 		select {
 		// Channel to recieve any events.
 		case got := <-c:
-			name, _ := m.getObject(got.Object)
+			name, _ := m.ObjectManager.GetObjectByName(got.Object)
 
 			switch name {
 

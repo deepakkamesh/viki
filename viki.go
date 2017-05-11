@@ -12,6 +12,8 @@ import (
 	"strings"
 
 	"github.com/deepakkamesh/viki/devicemanager"
+	"github.com/deepakkamesh/viki/devicemanager/device"
+	"github.com/deepakkamesh/viki/objectmanager"
 )
 
 type userChannel struct {
@@ -21,7 +23,7 @@ type userChannel struct {
 
 type Viki struct {
 	Version       string
-	Objects       map[string]*Object
+	ObjectManager *objectmanager.ObjectManager
 	DeviceManager *devicemanager.DeviceSettings
 	userChannels  []userChannel
 }
@@ -50,7 +52,7 @@ func (m *Viki) readConfig(file string) error {
 		// Get device if any.
 		var (
 			ok  bool
-			dev devicemanager.Device
+			dev device.Device
 		)
 		i := 2
 		// Ignore device if device not specified or empty.
@@ -68,7 +70,8 @@ func (m *Viki) readConfig(file string) error {
 				tags[j] = strings.Trim(tags[j], " ")
 			}
 		}
-		m.Objects[c[1]] = InitObject(c[0], dev, tags)
+		m.ObjectManager.AddObject(c[1], c[0], dev, tags)
+
 	}
 	return nil
 }
@@ -76,14 +79,14 @@ func (m *Viki) readConfig(file string) error {
 func New(ver string) *Viki {
 	return &Viki{
 		Version: ver,
-		Objects: make(map[string]*Object),
 	}
 }
 
 func (m *Viki) Init(configFile string) error {
 
-	// Initialize device manager.
-	m.DeviceManager = devicemanager.New()
+	// Initialize device manager and object manager.
+	m.ObjectManager = objectmanager.New()
+	m.DeviceManager = devicemanager.New(m.ObjectManager)
 
 	// Read configuration.
 	if err := m.readConfig(configFile); err != nil {
@@ -119,10 +122,10 @@ func (m *Viki) Run() {
 	for {
 		select {
 		case got := <-m.DeviceManager.Data:
-			_, o := m.getObject(got.Object)
+			_, o := m.ObjectManager.GetObjectByAddress(got.Object)
 			if o != nil {
 				// Set state if object is defined.
-				o.setState(got.Data)
+				o.SetState(got.Data)
 				// Send event to all user code channels.
 				for _, userChan := range m.userChannels {
 					userChan.data <- got
@@ -137,31 +140,22 @@ func (m *Viki) Run() {
 	}
 }
 
-// getObject returns the Object Name and *Object associated with object address.
-func (m *Viki) getObject(address string) (string, *Object) {
-	for k, v := range m.Objects {
-		if v.Address == address {
-			return k, v
-		}
-	}
-	return "", nil
-}
-
 // execObject sends data to the object.
 func (m *Viki) execObject(name string, data interface{}) error {
-	if obj, ok := m.Objects[name]; ok {
-		obj.execute(data)
-
-		// Send state change to all user code channels.
-		for _, userChan := range m.userChannels {
-			userChan.data <- devicemanager.DeviceData{
-				Data:   data,
-				Object: obj.Address,
-			}
-		}
-		return nil
+	if err := m.ObjectManager.Exec(name, data); err != nil {
+		return err
 	}
-	return fmt.Errorf("unknown object %s", name)
+
+	a, _ := m.ObjectManager.GetObjectByName(name)
+
+	// Send state change to all user code channels.
+	for _, userChan := range m.userChannels {
+		userChan.data <- devicemanager.DeviceData{
+			Data:   data,
+			Object: a,
+		}
+	}
+	return nil
 }
 
 // SendToDevice sends data to address on deviceId.

@@ -1,4 +1,5 @@
 #!/bin/sh
+pkill vikid
 LOC=$(dirname "$0")
 
 $LOC/vikid \
@@ -6,7 +7,7 @@ $LOC/vikid \
 -log=$LOC/../logs \
 -graphite_ipport=metrics.hyperlinkhome.com:2003 \
 -resource=$LOC/../resources \
--log_stdout=false \
--log_file=$LOC/../logs/viki.log \
-&
+-log_stdout=true \
+-log_file=$LOC/../logs/viki.log 
+#&
 #-ssl \

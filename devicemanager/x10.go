@@ -5,6 +5,8 @@ import (
 	"log"
 
 	"github.com/deepakkamesh/cm11"
+	"github.com/deepakkamesh/viki/devicemanager/device"
+	"github.com/deepakkamesh/viki/objectmanager"
 )
 
 const Device_X10 DeviceId = "x10"
@@ -14,6 +16,7 @@ type x10 struct {
 	quit     chan struct{}
 	err      chan error
 	out      chan DeviceData
+	om       *objectmanager.ObjectManager
 	cm11     *cm11.Device
 	cm11Data chan cm11.ObjState
 	cm11Err  chan error
@@ -21,12 +24,13 @@ type x10 struct {
 
 // Function to initialize the device.
 // Function called by devicemanager to initialize the device
-func (m *DeviceSettings) NewDeviceX10(out chan DeviceData, err chan error) (DeviceId, Device) {
+func (m *DeviceSettings) NewDeviceX10(out chan DeviceData, err chan error, om *objectmanager.ObjectManager) (DeviceId, device.Device) {
 	return Device_X10, &x10{
 		in:       make(chan DeviceData, 10),
 		quit:     make(chan struct{}),
 		err:      err,
 		out:      out,
+		om:       om,
 		cm11Data: make(chan cm11.ObjState),
 		cm11Err:  make(chan error),
 	}

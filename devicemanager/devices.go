@@ -10,19 +10,13 @@ import (
 	"log"
 	"reflect"
 	"regexp"
+
+	"github.com/deepakkamesh/viki/devicemanager/device"
+	"github.com/deepakkamesh/viki/objectmanager"
 )
 
 // Define all the device types.
 type DeviceId string
-
-// Interface implemented by all device types.
-type Device interface {
-	Execute(interface{}, string)
-	On()
-	Off()
-	Start() error
-	Shutdown()
-}
 
 // DeviceData is used to communicate with the device.
 type DeviceData struct {
@@ -32,19 +26,21 @@ type DeviceData struct {
 }
 
 type DeviceSettings struct {
-	Devices map[DeviceId]Device // map of all the configured devices.
-	Data    chan DeviceData     // channel to receive data from devices
-	Err     chan error          // channel to receive errors from devices
+	Devices map[DeviceId]device.Device // map of all the configured devices.
+	Objects *objectmanager.ObjectManager
+	Data    chan DeviceData // channel to receive data from devices
+	Err     chan error      // channel to receive errors from devices
 }
 
 // New initializes a new device manager backend.
-func New() *DeviceSettings {
+func New(o *objectmanager.ObjectManager) *DeviceSettings {
 	log.Printf("initializing device manager...")
 	errChan := make(chan error, 10)       // Shared error channel.
 	dataChan := make(chan DeviceData, 10) // Shared data channel.
 
 	deviceSettings := &DeviceSettings{
-		Devices: make(map[DeviceId]Device),
+		Devices: make(map[DeviceId]device.Device),
+		Objects: o,
 		Data:    dataChan,
 		Err:     errChan,
 	}
@@ -57,9 +53,10 @@ func New() *DeviceSettings {
 				[]reflect.Value{
 					reflect.ValueOf(dataChan),
 					reflect.ValueOf(errChan),
+					reflect.ValueOf(o),
 				})
 			devId := ret[0].Interface().(DeviceId)
-			dev := ret[1].Interface().(Device)
+			dev := ret[1].Interface().(device.Device)
 			deviceSettings.Devices[devId] = dev
 		}
 	}

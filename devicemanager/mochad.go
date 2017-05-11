@@ -9,6 +9,9 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/deepakkamesh/viki/devicemanager/device"
+	"github.com/deepakkamesh/viki/objectmanager"
 )
 
 // Unique Device Id. Usually  same as device name.
@@ -19,17 +22,19 @@ type mochad struct {
 	quit   chan struct{}
 	err    chan error
 	out    chan DeviceData
+	om     *objectmanager.ObjectManager
 	conn   net.Conn
 	ipPort string
 }
 
 // NewDeviceMochad returns a new and initialized mochad object.
-func (m *DeviceSettings) NewDeviceMochad(out chan DeviceData, err chan error) (DeviceId, Device) {
+func (m *DeviceSettings) NewDeviceMochad(out chan DeviceData, err chan error, om *objectmanager.ObjectManager) (DeviceId, device.Device) {
 	return Device_MOCHAD, &mochad{
 		in:   make(chan DeviceData, 10),
 		quit: make(chan struct{}),
 		err:  err,
 		out:  out,
+		om:   om,
 	}
 }
 

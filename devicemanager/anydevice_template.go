@@ -5,7 +5,12 @@ Steps to add a new device driver.
 */
 package devicemanager
 
-import "log"
+import (
+	"log"
+
+	"github.com/deepakkamesh/viki/devicemanager/device"
+	"github.com/deepakkamesh/viki/objectmanager"
+)
 
 // Unique Device Id. Usually  same as device name.
 const Device_ANYDEVICE DeviceId = "anydevice"
@@ -15,18 +20,20 @@ type anydev struct {
 	quit chan struct{}
 	err  chan error
 	out  chan DeviceData
+	om   *objectmanager.ObjectManager
 }
 
 // NewDevice<deviceName> returns a new and initialized anydevice.
 // The function needs to start with NewDevice* for device manager
 // to recognize this as a initializing function. Anything else
 // is ignored. It also has to implement the Device Interface.
-func (m *DeviceSettings) newDeviceAnyDevice(out chan DeviceData, err chan error) (DeviceId, Device) {
+func (m *DeviceSettings) newDeviceAnyDevice(out chan DeviceData, err chan error, om *objectmanager.ObjectManager) (DeviceId, device.Device) {
 	return Device_ANYDEVICE, &anydev{
 		in:   make(chan DeviceData, 10), // Input channel, typically buffered.
 		quit: make(chan struct{}),       // Quit.
 		err:  err,                       // Common error channel.
 		out:  out,                       // Channel to send out data.
+		om:   om,
 	}
 }
 

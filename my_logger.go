@@ -24,7 +24,7 @@ func (m *Viki) MyLogger(c chan devicemanager.DeviceData) {
 		// Wait to recieve any events.
 		got := <-c
 
-		name, object := m.getObject(got.Object)
+		name, object := m.ObjectManager.GetObjectByAddress(got.Object)
 		// TODO: this might change if type is different.
 		state, ok := got.Data.(string)
 		if !ok {
@@ -38,11 +38,11 @@ func (m *Viki) MyLogger(c chan devicemanager.DeviceData) {
 			// Log to graphite server if enabled.
 			if graphiteIpPort != "" {
 				metricPrefix := Graphite_PREFIX
-				if object.checkTag("motion") {
+				if object.CheckTag("motion") {
 					metricPrefix += ".motion"
-				} else if object.checkTag("door") {
+				} else if object.CheckTag("door") {
 					metricPrefix += ".door"
-				} else if object.checkTag("appliance") {
+				} else if object.CheckTag("appliance") {
 					metricPrefix += ".appliance"
 				} else {
 					continue

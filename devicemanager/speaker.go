@@ -7,6 +7,9 @@ import (
 	"log"
 	"net"
 	"time"
+
+	"github.com/deepakkamesh/viki/devicemanager/device"
+	"github.com/deepakkamesh/viki/objectmanager"
 )
 
 // Unique Device ID.
@@ -17,17 +20,19 @@ type speaker struct {
 	quit   chan struct{}
 	err    chan error
 	out    chan DeviceData
+	om     *objectmanager.ObjectManager
 	ipPort string
 	conn   net.Conn
 }
 
 // NewDeviceSpeaker returns a new and initialized speaker.
-func (m *DeviceSettings) NewDeviceSpeaker(out chan DeviceData, err chan error) (DeviceId, Device) {
+func (m *DeviceSettings) NewDeviceSpeaker(out chan DeviceData, err chan error, om *objectmanager.ObjectManager) (DeviceId, device.Device) {
 	return Device_SPEAKER, &speaker{
 		in:   make(chan DeviceData, 10),
 		quit: make(chan struct{}),
 		err:  err,
 		out:  out,
+		om:   om,
 	}
 }
 
