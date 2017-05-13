@@ -49,4 +49,5 @@ func main() {
 		glog.Fatalf("Fatal Error: %s\n", err)
 	}
 	v.Run()
+	defer glog.Flush()
 }

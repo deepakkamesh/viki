@@ -49,18 +49,10 @@ func (m *Viki) readConfig(file string) error {
 			c[i] = strings.Trim(c[i], " ")
 		}
 
-		// Get device if any.
 		var (
 			ok  bool
 			dev device.Device
 		)
-		i := 2
-		// Ignore device if device not specified or empty.
-		if len(c)-1 >= i && len(c[i]) > 0 {
-			if dev, ok = m.DeviceManager.Devices[devicemanager.DeviceId(c[i])]; !ok {
-				return fmt.Errorf("invalid device \"%s\" specified", c[i])
-			}
-		}
 
 		// Get tags if any.
 		tags, i := []string{}, 3
@@ -70,8 +62,18 @@ func (m *Viki) readConfig(file string) error {
 				tags[j] = strings.Trim(tags[j], " ")
 			}
 		}
-		m.ObjectManager.AddObject(c[1], c[0], dev, tags)
 
+		// Ignore device if device not specified or empty.
+		i = 2
+		if len(c)-1 >= i && len(c[i]) > 0 {
+			if dev, ok = m.DeviceManager.Devices[devicemanager.DeviceId(c[i])]; !ok {
+				return fmt.Errorf("invalid device \"%s\" specified", c[i])
+			}
+		} else {
+			glog.Warningf("Object %s does not have an associated device", c[0])
+		}
+
+		m.ObjectManager.AddObject(c[1], c[0], dev, tags)
 	}
 	return nil
 }

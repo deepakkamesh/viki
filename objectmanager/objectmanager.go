@@ -1,7 +1,6 @@
 package objectmanager
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/deepakkamesh/viki/devicemanager/device"
@@ -61,11 +60,11 @@ func NewObject(name string, address string, device device.Device, tags []string)
 
 // Execute calls the underlying device driver to execute command.
 func (m *Object) Execute(data interface{}) error {
-	if m.device == nil {
-		return fmt.Errorf("device driver uninitialized for object %s", m.Name)
-	}
-	m.device.Execute(data, m.Address)
 	m.SetState(data)
+	// If object is associated with a device send an exec command to it.
+	if m.device != nil {
+		m.device.Execute(data, m.Address)
+	}
 	return nil
 }
 
