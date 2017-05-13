@@ -6,10 +6,9 @@ Steps to add a new device driver.
 package devicemanager
 
 import (
-	"log"
-
 	"github.com/deepakkamesh/viki/devicemanager/device"
 	"github.com/deepakkamesh/viki/objectmanager"
+	"github.com/golang/glog"
 )
 
 // Unique Device Id. Usually  same as device name.
@@ -41,23 +40,23 @@ func (m *anydev) execute(data interface{}, object string) error {
 
 	// Assert the command data depending on device.
 	d, _ := data.(string)
-	log.Printf("anydevice: executing %d on %s", d, object)
+	glog.Infof("anydevice: executing %d on %s", d, object)
 	return nil
 }
 
 // On turns off the device.
 func (m *anydev) On() {
-	log.Printf("Turn off")
+	glog.Infof("Turn off")
 }
 
 // Off turns off the device.
 func (m *anydev) Off() {
-	log.Printf("Turn off")
+	glog.Infof("Turn off")
 }
 
 // Start initiates the device.
 func (m *anydev) Start() error {
-	log.Printf("starting device [name]...")
+	glog.Infof("starting device [name]...")
 	// Set any required parameters using flag.
 	go m.run()
 	return nil
@@ -66,8 +65,8 @@ func (m *anydev) Start() error {
 // Execute queues up the requested command to the channel.
 func (m *anydev) Execute(action interface{}, object string) {
 	m.in <- DeviceData{
-		Data:   action,
-		Object: object,
+		Data:    action,
+		Address: object,
 	}
 }
 
@@ -81,7 +80,7 @@ func (m *anydev) run() {
 	for {
 		select {
 		case in := <-m.in:
-			if err := m.execute(in.Data, in.Object); err != nil {
+			if err := m.execute(in.Data, in.Address); err != nil {
 				m.err <- err
 			}
 		case <-m.quit:

@@ -2,16 +2,17 @@ package viki
 
 import (
 	"fmt"
-	"log"
 	"sort"
 	"strings"
 
 	"github.com/deepakkamesh/viki/devicemanager"
+	"github.com/golang/glog"
 )
 
-func (m *Viki) MyHttpHandler(c chan devicemanager.DeviceData) {
+func (m *Viki) MyHTTPHandler(c chan devicemanager.DeviceData) {
 
-	log.Printf("starting user routine httphandler...")
+	glog.Infof("Starting user routine MyHTTPHandler...")
+	defer glog.Infof("Shutting down routine MyHTTPHandler")
 
 	// Build object list for nlp.
 	objs := []*nlpMatch{}
@@ -24,24 +25,24 @@ func (m *Viki) MyHttpHandler(c chan devicemanager.DeviceData) {
 
 	for {
 		select {
-		// Channel to recieve any events.
 		case got := <-c:
-			switch got.Object {
+			switch got.Address {
 			case "http_cmd":
 				d, _ := got.Data.([]string)
 				state := sanitizeState(d[1])
-				if err := m.execObject(d[0], state); err != nil {
-					log.Printf("recieved unknown object %s %v", d[0], err)
+				if err := m.Do(d[0], state); err != nil {
+					glog.Errorf("Error executing on %s %v", d[0], err)
 					continue
 				}
-			//	m.ExecObject("speaker", "I am Executing command")
 
 			case "http_qry":
 				d, _ := got.Data.(string)
 				res := matchObject(objs, d)
 				if act, err := matchAction(d); err == nil {
 					for _, i := range res {
-						m.execObject(i.object, act)
+						if err := m.Do(i.object, act); err != nil {
+							glog.Errorf("Error executing query %s on %s: %v", d, i.object, err)
+						}
 					}
 				}
 			}

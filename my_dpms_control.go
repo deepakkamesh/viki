@@ -20,7 +20,7 @@ func (m *Viki) DEPRECATED_myDpmsControl(c chan devicemanager.DeviceData) {
 		select {
 		case got := <-c:
 			d, _ := got.Data.(string)
-			_, o := m.ObjectManager.GetObjectByAddress(got.Object)
+			_, o := m.ObjectManager.GetObjectByAddress(got.Address)
 
 			// Got some motion.
 			if o.CheckTag("motion") && d == "On" && !screenOn {

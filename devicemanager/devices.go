@@ -7,34 +7,34 @@ pandora - play electronica
 package devicemanager
 
 import (
-	"log"
 	"reflect"
 	"regexp"
 
 	"github.com/deepakkamesh/viki/devicemanager/device"
 	"github.com/deepakkamesh/viki/objectmanager"
+	"github.com/golang/glog"
 )
 
 // Define all the device types.
 type DeviceId string
 
-// DeviceData is used to communicate with the device.
+// DeviceData is used to send/recieve data with the device.
 type DeviceData struct {
 	DeviceId DeviceId    // Device number.
-	Object   string      // Address of object.
+	Address  string      // Address of object.
 	Data     interface{} // command to be executed or return value.
 }
 
 type DeviceSettings struct {
-	Devices map[DeviceId]device.Device // map of all the configured devices.
-	Objects *objectmanager.ObjectManager
-	Data    chan DeviceData // channel to receive data from devices
-	Err     chan error      // channel to receive errors from devices
+	Devices map[DeviceId]device.Device   // map of all the configured devices.
+	Objects *objectmanager.ObjectManager // Objects
+	Data    chan DeviceData              // channel to receive data from devices
+	Err     chan error                   // channel to receive errors from devices
 }
 
 // New initializes a new device manager backend.
 func New(o *objectmanager.ObjectManager) *DeviceSettings {
-	log.Printf("initializing device manager...")
+	glog.Infof("initializing device manager...")
 	errChan := make(chan error, 10)       // Shared error channel.
 	dataChan := make(chan DeviceData, 10) // Shared data channel.
 
@@ -70,7 +70,7 @@ func (m *DeviceSettings) StartDeviceManager() {
 	// Start all the configured devices.
 	for _, dev := range m.Devices {
 		if err := dev.Start(); err != nil {
-			log.Printf("Error starting device.  Failed with %s", err)
+			glog.Errorf("Error starting device.  Failed with %s", err)
 		}
 	}
 }

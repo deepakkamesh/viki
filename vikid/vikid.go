@@ -3,10 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/deepakkamesh/viki"
+	"github.com/golang/glog"
 )
 
 var (
@@ -18,18 +18,20 @@ func main() {
 
 	// Setup flags.
 	configFile := flag.String("config_file", "objects.conf", "Config file for objects")
-	logFile := flag.String("log_file", "viki.log", "log file path")
-	logStdOut := flag.Bool("log_stdout", true, "log to std out only")
 	version := flag.Bool("version", false, "display version")
+
 	flag.String("festival_ipport", "127.0.0.1:1314", "Ip:Port of festival server")
 	flag.String("mochad_ipport", "127.0.0.1:1099", "Ip:Port of mochad server")
 	flag.String("graphite_ipport", "", "Ip:port of graphite server.")
 	flag.String("http_listen_port", "2233", "Port number of the http server")
 	flag.String("x10_tty", "/dev/ttyUSB0", "tty device for x10 controller")
 	flag.String("resource", "./resources", "path to the resources folder")
-	flag.String("log", "./logs", "path to the logs folder")
-	flag.Float64("lat", 37.416969, "latitude coordinate")
-	flag.Float64("long", -122.051219, "longitude coordinate")
+	flag.Float64("lat", 0, "latitude coordinate")
+	flag.Float64("long", 0, "longitude coordinate")
+	flag.String("mg_domain", "", "Domain name for mailgun")
+	flag.String("mg_apikey", "", "Api key for mailgun")
+	flag.String("mg_pubkey", "", "Public API key for mailgun")
+	flag.String("email_alert_list", "", "comma separated list of people to alert by email for events")
 	flag.Bool("ssl", false, "listen only on https")
 	flag.Parse()
 
@@ -40,22 +42,11 @@ func main() {
 		os.Exit(0)
 	}
 
-	if !*logStdOut {
-		// Setup log file.
-		f, err := os.OpenFile(*logFile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
-		if err != nil {
-			log.Fatalf("Unable to open log %s file for writing %s", *logFile, err)
-		}
-		log.SetOutput(f)
-		defer f.Close()
-	}
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-
 	// Init and run viki
 	v := viki.New(githash)
-	fmt.Println("Starting Viki version:", v.Version)
+	glog.Infof("Starting Viki version:%v", v.Version)
 	if err := v.Init(*configFile); err != nil {
-		log.Fatalf("Fatal Error: %s\n", err)
+		glog.Fatalf("Fatal Error: %s\n", err)
 	}
 	v.Run()
 }

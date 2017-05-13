@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"regexp"
 	"strings"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/deepakkamesh/viki/devicemanager/device"
 	"github.com/deepakkamesh/viki/objectmanager"
+	"github.com/golang/glog"
 )
 
 // Unique Device Id. Usually  same as device name.
@@ -42,7 +42,7 @@ func (m *DeviceSettings) NewDeviceMochad(out chan DeviceData, err chan error, om
 func (m *mochad) execute(data interface{}, object string) error {
 	// Assert the command data depending on device.
 	d, _ := data.(string)
-	log.Printf("mochad: executing %s on %s", d, object)
+	glog.Infof("mochad: executing %s on %s", d, object)
 	return nil
 }
 
@@ -79,7 +79,7 @@ func (m *mochad) runMochadPoll() {
 
 			m.out <- DeviceData{
 				DeviceId: Device_MOCHAD,
-				Object:   strings.Trim(matches[2], " "),
+				Address:  strings.Trim(matches[2], " "),
 				Data:     state,
 			}
 		}
@@ -89,18 +89,18 @@ func (m *mochad) runMochadPoll() {
 // On turns off the device.
 // Not implemented.
 func (m *mochad) On() {
-	log.Printf("Turn off")
+	glog.Infof("Turn off")
 }
 
 // Off turns off the device.
 // Not implemented.
 func (m *mochad) Off() {
-	log.Printf("Turn off")
+	glog.Infof("Turn off")
 }
 
 // Start initiates the device.
 func (m *mochad) Start() error {
-	log.Printf("starting device mochad...")
+	glog.Infof("starting device mochad...")
 	m.ipPort = flag.Lookup("mochad_ipport").Value.String()
 
 	go m.run()
@@ -111,8 +111,8 @@ func (m *mochad) Start() error {
 // Execute queues up the requested command to the channel.
 func (m *mochad) Execute(action interface{}, object string) {
 	m.in <- DeviceData{
-		Data:   action,
-		Object: object,
+		Data:    action,
+		Address: object,
 	}
 }
 
@@ -126,7 +126,7 @@ func (m *mochad) run() {
 	for {
 		select {
 		case in := <-m.in:
-			if err := m.execute(in.Data, in.Object); err != nil {
+			if err := m.execute(in.Data, in.Address); err != nil {
 				m.err <- err
 			}
 

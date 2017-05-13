@@ -6,9 +6,8 @@ This code is a template for writing custom actions
 package viki
 
 import (
-	"log"
-
 	"github.com/deepakkamesh/viki/devicemanager"
+	"github.com/golang/glog"
 )
 
 // User code starts with "my"
@@ -16,7 +15,8 @@ import (
 // Anything else is ignored.
 func (m *Viki) MyUserCode(c chan devicemanager.DeviceData) {
 
-	log.Printf("starting user routine userCode...")
+	glog.Infof("Starting user routine userCode...")
+	defer glog.Infof("Shutting down user routine userCode...")
 
 	for {
 		select {

@@ -1,7 +1,6 @@
 package objectmanager
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -40,17 +39,6 @@ func (m *ObjectManager) GetObjectByAddress(address string) (string, *Object) {
 	return "", nil
 }
 
-func (m *ObjectManager) Exec(name string, data interface{}) error {
-	_, o := m.GetObjectByName(name)
-	if o == nil {
-		return errors.New(fmt.Sprintf("object with name %v not found", name))
-	}
-
-	o.Execute(data)
-
-	return nil
-}
-
 /* Object manager reads the configuration and maps the objects with the underlying
 device manager. It also maintains state of each object.
 */
@@ -72,11 +60,13 @@ func NewObject(name string, address string, device device.Device, tags []string)
 }
 
 // Execute calls the underlying device driver to execute command.
-func (m *Object) Execute(data interface{}) {
-	if m.device != nil {
-		m.device.Execute(data, m.Address)
+func (m *Object) Execute(data interface{}) error {
+	if m.device == nil {
+		return fmt.Errorf("device driver uninitialized for object %s", m.Name)
 	}
+	m.device.Execute(data, m.Address)
 	m.SetState(data)
+	return nil
 }
 
 // SetState changes state of object.

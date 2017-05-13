@@ -5,7 +5,6 @@ package viki
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"reflect"
 	"regexp"
@@ -14,6 +13,7 @@ import (
 	"github.com/deepakkamesh/viki/devicemanager"
 	"github.com/deepakkamesh/viki/devicemanager/device"
 	"github.com/deepakkamesh/viki/objectmanager"
+	"github.com/golang/glog"
 )
 
 type userChannel struct {
@@ -84,13 +84,13 @@ func New(ver string) *Viki {
 
 func (m *Viki) Init(configFile string) error {
 
-	// Initialize device manager and object manager.
+	// Initialization order is important since readConfig relies
+	// on an initialized ObjectManager and DeviceManager.
 	m.ObjectManager = objectmanager.New()
 	m.DeviceManager = devicemanager.New(m.ObjectManager)
 
-	// Read configuration.
 	if err := m.readConfig(configFile); err != nil {
-		return fmt.Errorf("config file error %s", err)
+		return fmt.Errorf("failed to read config file %v", err)
 	}
 
 	return nil
@@ -118,51 +118,48 @@ func (m *Viki) Run() {
 		}
 	}
 
-	// Run the main processing loop.
+	// Process messages from devices.
 	for {
 		select {
 		case got := <-m.DeviceManager.Data:
-			_, o := m.ObjectManager.GetObjectByAddress(got.Object)
-			if o != nil {
-				// Set state if object is defined.
-				o.SetState(got.Data)
-				// Send event to all user code channels.
-				for _, userChan := range m.userChannels {
-					userChan.data <- got
-				}
+			_, o := m.ObjectManager.GetObjectByAddress(got.Address)
+			if o == nil {
+				glog.Warningf("Object with address %s does not exit ", got.Address)
 				continue
 			}
-			log.Printf("object %s does not exit ", got.Object)
-
+			o.SetState(got.Data)
+			// Send event to all user code channels.
+			for _, userChan := range m.userChannels {
+				userChan.data <- got
+			}
 		case err := <-m.DeviceManager.Err:
-			log.Printf("device manager error %s", err)
+			glog.Errorf("Device manager error %s", err)
 		}
 	}
 }
 
-// execObject sends data to the object.
-func (m *Viki) execObject(name string, data interface{}) error {
-	if err := m.ObjectManager.Exec(name, data); err != nil {
-		return err
+// Viki Helper Functions for usercode.
+
+// Do sends data to the object with name.
+func (m *Viki) Do(name string, data interface{}) error {
+
+	a, o := m.ObjectManager.GetObjectByName(name)
+	if o == nil {
+		glog.Errorf("object with name %v not found", name)
+		return fmt.Errorf("object with name %v not found", name)
 	}
 
-	a, _ := m.ObjectManager.GetObjectByName(name)
+	if err := o.Execute(data); err != nil {
+		glog.Errorf("failed to execute %v", err)
+		return err
+	}
 
 	// Send state change to all user code channels.
 	for _, userChan := range m.userChannels {
 		userChan.data <- devicemanager.DeviceData{
-			Data:   data,
-			Object: a,
+			Data:    data,
+			Address: a,
 		}
 	}
 	return nil
-}
-
-// SendToDevice sends data to address on deviceId.
-func (m *Viki) sendToDevice(dev string, address string, data interface{}) error {
-	if dev, ok := m.DeviceManager.Devices[devicemanager.DeviceId(dev)]; ok {
-		dev.Execute(data, address)
-		return nil
-	}
-	return fmt.Errorf("unknown device %s", dev)
 }

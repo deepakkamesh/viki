@@ -7,7 +7,6 @@ package devicemanager
 
 import (
 	"fmt"
-	"log"
 	"net/url"
 	"strings"
 
@@ -37,7 +36,7 @@ func (m *DeviceSettings) NewDeviceArtik(out chan DeviceData, err chan error, om 
 		err:  err,                       // Common error channel.
 		out:  out,                       // Channel to send out data.
 		om:   om,
-		inC:  make(chan []byte), //Input channel for actions
+		inC:  make(chan []byte, 10), //Input channel for actions
 	}
 }
 
@@ -45,25 +44,26 @@ func (m *artik) execute(data interface{}, object string) error {
 
 	// Assert the command data depending on device.
 	d, _ := data.(string)
-	log.Printf("artik: executing %d on %s", d, object)
+	glog.Infof("artik: executing %d on %s", d, object)
 	return nil
 }
 
 // On turns off the device.
 func (m *artik) On() {
-	log.Printf("Turn off")
+	glog.Infof("Turn off")
 }
 
 // Off turns off the device.
 func (m *artik) Off() {
-	log.Printf("Turn off")
+	glog.Infof("Turn off")
 }
 
 // Start initiates the device.
 func (m *artik) Start() error {
-	log.Printf("starting device artik...")
-	// Set any required parameters using flag.
-	m.register()
+	glog.Infof("Starting device artik...")
+	if err := m.register(); err != nil {
+		fmt.Errorf("registration failed %v", err)
+	}
 	go m.receiver()
 	go m.run()
 	return nil
@@ -72,8 +72,8 @@ func (m *artik) Start() error {
 // Execute queues up the requested command to the channel.
 func (m *artik) Execute(action interface{}, object string) {
 	m.in <- DeviceData{
-		Data:   action,
-		Object: object,
+		Data:    action,
+		Address: object,
 	}
 }
 
@@ -89,7 +89,7 @@ func (m *artik) run() {
 		select {
 		// Send sensor data to Artik Cloud.
 		case in := <-m.in:
-			if err := m.execute(in.Data, in.Object); err != nil {
+			if err := m.execute(in.Data, in.Address); err != nil {
 				m.err <- err
 			}
 		// Actions from Artik Cloud.
@@ -97,7 +97,7 @@ func (m *artik) run() {
 			m.out <- DeviceData{
 				DeviceId: Device_ARTIK,
 				Data:     msg,
-				Object:   "artik",
+				Address:  "artik",
 			}
 
 		case <-m.quit:
@@ -110,38 +110,39 @@ func (m *artik) receiver() {
 	for {
 		_, message, err := m.ws.ReadMessage()
 		if err != nil {
-			log.Println("read:", err)
-			return
+			glog.Errorf("Read failed from websock: %v", err)
+			continue
 		}
-		glog.V(2).Infof("recv: %s", message)
+		glog.V(2).Infof("Recieved on websocket: %s", message)
 		m.inC <- message
 	}
 }
 
-func (m *artik) register() {
+func (m *artik) register() error {
 	u := url.URL{Scheme: "wss", Host: "api.artik.cloud", Path: "/v1.1/websocket"}
-	log.Printf("connecting to %s", u.String())
+	glog.V(1).Infof("Connecting to %s", u.String())
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-		log.Fatal("dial:", err)
+		return fmt.Errorf("failed to dial Artik: %v", err)
 	}
 	m.ws = c
+
 	// register device.
-
-	//	regMsg := `{"type":"register", "sdid":"d2381f135c6441a2a895f1341c969ec6", "Authorization":"bearer 0d434ab87f4c4586898520d96afa3181", "cid":"1234546"}`
-
 	for _, o := range m.om.Objects {
 		deviceID, ok1 := o.GetTag("ddid")
 		deviceToken, ok2 := o.GetTag("dtid")
-		if !ok1 || !ok2 {
+		if !(ok1 && ok2) {
 			continue
 		}
 		ddid := strings.Split(deviceID, "=")[1]
 		dtid := strings.Split(deviceToken, "=")[1]
 
 		regMsg := fmt.Sprintf("{\"type\":\"register\", \"sdid\":\"%s\", \"Authorization\":\"bearer %s\"}", ddid, dtid)
-		log.Printf("Register %v", regMsg)
-		c.WriteMessage(websocket.TextMessage, []byte(regMsg))
+		glog.V(1).Infof("Registering device %s Msg:%v", o.Name, regMsg)
+		if err := c.WriteMessage(websocket.TextMessage, []byte(regMsg)); err != nil {
+			return fmt.Errorf("failed to write message: %v", err)
+		}
 	}
+	return nil
 }

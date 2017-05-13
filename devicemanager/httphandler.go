@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"sort"
 	"strings"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/deepakkamesh/viki/devicemanager/device"
 	"github.com/deepakkamesh/viki/objectmanager"
+	"github.com/golang/glog"
 )
 
 // Google Home Fullfillment Response.
@@ -99,7 +99,7 @@ func (m *httphandler) Off() {
 }
 
 func (m *httphandler) Start() error {
-	log.Printf("starting device HttpHandler...")
+	glog.Infof("starting device HttpHandler...")
 	http.HandleFunc("/object/", m.handleObject)         // Handler for commands on objects.
 	http.HandleFunc("/q/", m.handleQuery)               // Handler for  queries (nlp).
 	http.HandleFunc("/googlehome/", m.handleGoogleHome) // Handler for google home.
@@ -124,8 +124,8 @@ func (m *httphandler) Shutdown() {
 
 func (m *httphandler) Execute(action interface{}, object string) {
 	m.in <- DeviceData{
-		Data:   action,
-		Object: object,
+		Data:    action,
+		Address: object,
 	}
 }
 
@@ -206,12 +206,12 @@ func (m *httphandler) handleIndex(w http.ResponseWriter, r *http.Request) {
 
 	tplIdx, err := template.ParseFiles(res + "/index.html")
 	if err != nil {
-		log.Fatalf("error reading file %s", err)
+		glog.Fatalf("error reading file %s", err)
 	}
 	// Build and send objects and state to http device.
 	idxPage, err := buildIndexPage(m.om.Objects, tplIdx)
 	if err != nil {
-		log.Printf("build index page failed %s", err)
+		glog.Infof("build index page failed %s", err)
 	}
 
 	fmt.Fprintf(w, "%s", idxPage)
@@ -223,17 +223,17 @@ func (m *httphandler) handleIndex(w http.ResponseWriter, r *http.Request) {
 func (m *httphandler) handleGoogleHome(w http.ResponseWriter, r *http.Request) {
 	var msg FulfillmentRequest
 	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
-		log.Printf("Failed to decode json fulfllment request")
+		glog.Infof("Failed to decode json fulfllment request")
 	}
 
-	log.Printf("Got request from google home %v", msg.Result.Parameters)
+	glog.Infof("Got request from google home %v", msg.Result.Parameters)
 	object := msg.Result.Parameters.Object
 	state := msg.Result.Parameters.State
 
 	m.out <- DeviceData{
 		DeviceId: Device_HTTPHANDLER,
 		Data:     []string{object, state},
-		Object:   "http_cmd",
+		Address:  "http_cmd",
 	}
 
 	// Build a response back.
@@ -252,7 +252,7 @@ func (m *httphandler) handleGoogleHome(w http.ResponseWriter, r *http.Request) {
 
 	b, err := json.Marshal(resp)
 	if err != nil {
-		log.Fatalf("Failed to marshal response: %v", err)
+		glog.Fatalf("Failed to marshal response: %v", err)
 	}
 
 	w.Header().Set("Content-type", "application/json")
@@ -270,9 +270,9 @@ func (m *httphandler) handleObject(w http.ResponseWriter, r *http.Request) {
 	m.out <- DeviceData{
 		DeviceId: Device_HTTPHANDLER,
 		Data:     req[1:],
-		Object:   "http_cmd",
+		Address:  "http_cmd",
 	}
-	log.Printf("recieved http request %s %s", req[2], req[1])
+	glog.Infof("recieved http request %s %s", req[2], req[1])
 	http.Redirect(w, r, "/", 302)
 }
 
@@ -283,8 +283,8 @@ func (m *httphandler) handleQuery(w http.ResponseWriter, r *http.Request) {
 	m.out <- DeviceData{
 		DeviceId: Device_HTTPHANDLER,
 		Data:     q,
-		Object:   "http_qry",
+		Address:  "http_qry",
 	}
 	fmt.Fprintf(w, "executing  %s", q)
-	log.Printf("recieved http request %s", q)
+	glog.Infof("recieved http request %s", q)
 }

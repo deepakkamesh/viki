@@ -3,20 +3,21 @@ package viki
 import (
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/deepakkamesh/viki/devicemanager"
+	"github.com/golang/glog"
 )
 
 const Graphite_PREFIX string = "viki"
 
 func (m *Viki) MyLogger(c chan devicemanager.DeviceData) {
 
-	log.Printf("starting user routine logger...")
+	glog.Infof("Starting user routine MyLogger...")
+	defer glog.Infof("Shutting down user routine MyLogger...")
 
 	graphiteIpPort := flag.Lookup("graphite_ipport").Value.String()
 
@@ -24,42 +25,40 @@ func (m *Viki) MyLogger(c chan devicemanager.DeviceData) {
 		// Wait to recieve any events.
 		got := <-c
 
-		name, object := m.ObjectManager.GetObjectByAddress(got.Object)
+		name, object := m.ObjectManager.GetObjectByAddress(got.Address)
+
 		// TODO: this might change if type is different.
 		state, ok := got.Data.(string)
 		if !ok {
 			continue
 		}
 
-		if object != nil {
+		glog.V(1).Infof("Event: %s(%s),%s", name, got.DeviceId, state)
 
-			log.Printf("event: %s(%s),%s", name, got.DeviceId, state)
-
-			// Log to graphite server if enabled.
-			if graphiteIpPort != "" {
-				metricPrefix := Graphite_PREFIX
-				if object.CheckTag("motion") {
-					metricPrefix += ".motion"
-				} else if object.CheckTag("door") {
-					metricPrefix += ".door"
-				} else if object.CheckTag("appliance") {
-					metricPrefix += ".appliance"
-				} else {
-					continue
-				}
-				metric := formatMetric(metricPrefix, name, state)
-				conn, err := net.DialTimeout("tcp", graphiteIpPort, time.Duration(2)*time.Second)
-				if err != nil {
-					log.Printf("unable to dial graphite %s", err)
-					continue
-				}
-				if _, err := fmt.Fprintf(conn, "%s\n", metric); err != nil {
-					log.Printf("unable to send metric to graphite %s", err)
-				}
-			}
+		// Log to graphite server if enabled.
+		if graphiteIpPort == "" {
 			continue
 		}
-		log.Printf("Got data from unknown object %s %s\n", got.Object, state)
+		metricPrefix := Graphite_PREFIX
+		if object.CheckTag("motion") {
+			metricPrefix += ".motion"
+		} else if object.CheckTag("door") {
+			metricPrefix += ".door"
+		} else if object.CheckTag("appliance") {
+			metricPrefix += ".appliance"
+		} else {
+			continue
+		}
+		metric := formatMetric(metricPrefix, name, state)
+		conn, err := net.DialTimeout("tcp", graphiteIpPort, time.Duration(2)*time.Second)
+		if err != nil {
+			glog.Warningf("unable to dial graphite %s", err)
+			continue
+		}
+		if _, err := fmt.Fprintf(conn, "%s\n", metric); err != nil {
+			glog.Warningf("unable to send metric to graphite %s", err)
+		}
+		continue
 	}
 }
 

@@ -4,12 +4,12 @@ package devicemanager
 import (
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"time"
 
 	"github.com/deepakkamesh/viki/devicemanager/device"
 	"github.com/deepakkamesh/viki/objectmanager"
+	"github.com/golang/glog"
 )
 
 // Unique Device ID.
@@ -40,7 +40,7 @@ func (m *DeviceSettings) NewDeviceSpeaker(out chan DeviceData, err chan error, o
 func (m *speaker) speakFestival(data interface{}) error {
 	var err error
 	text, _ := data.(string)
-	log.Printf("speaking  %s", text)
+	glog.Infof("speaking  %s", text)
 
 	for r := 3; r > 0; r -= 1 {
 		// If conn is not initialized, attempt to connect.
@@ -70,7 +70,7 @@ func (m *speaker) Off() {
 
 // Start initiates the device.
 func (m *speaker) Start() error {
-	log.Printf("starting device speak...")
+	glog.Infof("starting device speak...")
 	flag := flag.Lookup("festival_ipport")
 	m.ipPort = flag.Value.String()
 
@@ -81,8 +81,8 @@ func (m *speaker) Start() error {
 // Execute queues up the requested command to the channel.
 func (m *speaker) Execute(action interface{}, object string) {
 	m.in <- DeviceData{
-		Data:   action,
-		Object: object,
+		Data:    action,
+		Address: object,
 	}
 }
 
@@ -96,7 +96,7 @@ func (m *speaker) run() {
 	for {
 		select {
 		case in := <-m.in:
-			switch in.Object {
+			switch in.Address {
 			case "festival":
 				if err := m.speakFestival(in.Data); err != nil {
 					m.err <- err

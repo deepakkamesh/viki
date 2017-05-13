@@ -2,11 +2,11 @@ package devicemanager
 
 import (
 	"flag"
-	"log"
 
 	"github.com/deepakkamesh/cm11"
 	"github.com/deepakkamesh/viki/devicemanager/device"
 	"github.com/deepakkamesh/viki/objectmanager"
+	"github.com/golang/glog"
 )
 
 const Device_X10 DeviceId = "x10"
@@ -39,19 +39,19 @@ func (m *DeviceSettings) NewDeviceX10(out chan DeviceData, err chan error, om *o
 func (m *x10) execute(data interface{}, address string) error {
 	d, _ := data.(string)
 	m.cm11.SendCommand(address[0:1], address[1:], d)
-	log.Printf("cm11 executing %s on %s", d, address)
+	glog.Infof("cm11 executing %s on %s", d, address)
 	return nil
 }
 
 func (m *x10) On() {
-	log.Printf("Turn on x10")
+	glog.Infof("Turn on x10")
 }
 func (m *x10) Off() {
-	log.Printf("Turn off x10")
+	glog.Infof("Turn off x10")
 }
 
 func (m *x10) Start() error {
-	log.Printf("starting device cm11...")
+	glog.Infof("starting device cm11...")
 	tty := flag.Lookup("x10_tty").Value.String()
 	m.cm11 = cm11.New(tty, m.cm11Data, m.cm11Err)
 	if err := m.cm11.Init(); err != nil {
@@ -63,8 +63,8 @@ func (m *x10) Start() error {
 
 func (m *x10) Execute(action interface{}, object string) {
 	m.in <- DeviceData{
-		Data:   action,
-		Object: object,
+		Data:    action,
+		Address: object,
 	}
 }
 func (m *x10) Shutdown() {
@@ -75,7 +75,7 @@ func (m *x10) run() {
 	for {
 		select {
 		case in := <-m.in:
-			if err := m.execute(in.Data, in.Object); err != nil {
+			if err := m.execute(in.Data, in.Address); err != nil {
 				m.err <- err
 			}
 		case data := <-m.cm11Data:
@@ -83,7 +83,7 @@ func (m *x10) run() {
 			m.out <- DeviceData{
 				DeviceId: Device_X10,
 				Data:     data.FunctionCode,
-				Object:   obj,
+				Address:  obj,
 			}
 		case err := <-m.cm11Err:
 			m.err <- err

@@ -1,25 +1,27 @@
 package viki
 
 import (
+	"flag"
 	"fmt"
-	"log"
+	"strings"
 	"time"
 
 	"github.com/deepakkamesh/viki/devicemanager"
-	"github.com/mailgun/mailgun-go"
+	"github.com/golang/glog"
 )
 
 func (m *Viki) MyAlertManager(c chan devicemanager.DeviceData) {
 
-	log.Printf("starting user routine Alert Manager...")
-	// TODO: Load from flags.
-	mg := mailgun.NewMailgun("sandboxf139420cc83d4d3a8c3cf5dfc9b06b42.mailgun.org", "key-6ceddfaf05c0d237076a19abe2afef5d", "pubkey-ce009cba9207ec56ae09ac45b9607c2f")
+	glog.Infof("Starting user routine MyAlertManager...")
+	defer glog.Infof("Shutting down user routine MyAlertManage...")
+
+	fgRecipients := flag.Lookup("email_alert_list")
 
 	for {
 		select {
 		// Channel to recieve any events.
 		case got := <-c:
-			name, obj := m.ObjectManager.GetObjectByAddress(got.Object)
+			name, obj := m.ObjectManager.GetObjectByAddress(got.Address)
 
 			// Alerts when we are not at home.
 			if m.getModeState("mode vacation") == "On" {
@@ -27,45 +29,43 @@ func (m *Viki) MyAlertManager(c chan devicemanager.DeviceData) {
 				// Motion inside.
 				if st == "On" && obj.CheckTag("indoor_motion") {
 					msg := fmt.Sprintf("Detected motion in %s", name)
-					quickMail("deepak.kamesh@gmail.com", msg, mg)
-					quickMail("6024050044@tmomail.net", msg, mg)
-					// Turn on the living room light for a bit.
-					m.execObject("living light", "On")
-					m.execObject("dining light", "On")
-					m.execObject("buzzer", "On")
+					if fgRecipients != nil {
+						if err := m.quickMail(strings.Split(fgRecipients.Value.String(), ","), msg); err != nil {
+							glog.Errorf("failed to send email %v", err)
+						}
+					}
+
+					m.Do("living light", "On")
+					m.Do("dining light", "On")
+					m.Do("buzzer", "On")
 					time.AfterFunc(3*time.Minute, func() {
-						m.execObject("living light", "Off")
-						m.execObject("dining light", "Off")
-						m.execObject("buzzer", "Off")
+						m.Do("living light", "Off")
+						m.Do("dining light", "Off")
+						m.Do("buzzer", "Off")
 					})
 					continue
 				}
+
 				// Doors opened.
 				if st == "Open" && obj.CheckTag("door") {
 					msg := fmt.Sprintf("%s Open", name)
-					quickMail("deepak.kamesh@gmail.com", msg, mg)
-					quickMail("6024050044@tmomail.net", msg, mg)
-					// for a bit.
-					m.execObject("living light", "On")
-					m.execObject("dining light", "On")
-					m.execObject("buzzer", "On")
+					if fgRecipients != nil {
+						if err := m.quickMail(strings.Split(fgRecipients.Value.String(), ","), msg); err != nil {
+							glog.Errorf("failed to send email %v", err)
+						}
+					}
+
+					m.Do("living light", "On")
+					m.Do("dining light", "On")
+					m.Do("buzzer", "On")
 					time.AfterFunc(3*time.Minute, func() {
-						m.execObject("living light", "Off")
-						m.execObject("dining light", "Off")
-						m.execObject("buzzer", "Off")
+						m.Do("living light", "Off")
+						m.Do("dining light", "Off")
+						m.Do("buzzer", "Off")
 					})
 					continue
 				}
 			}
 		}
 	}
-}
-
-func quickMail(recipient string, msg string, mg mailgun.Mailgun) {
-	message := mailgun.NewMessage("home@fulton-ave", "Alert!", msg, recipient)
-	msg, id, err := mg.Send(message)
-	if err != nil {
-		log.Printf("Could not send message: %v, ID %v, %+v", err, id, msg)
-	}
-
 }

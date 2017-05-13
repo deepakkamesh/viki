@@ -4,30 +4,30 @@ room, turn on the living room lights. If there is any external motion, trigger a
 package viki
 
 import (
-	"log"
-
 	"github.com/deepakkamesh/viki/devicemanager"
+	"github.com/golang/glog"
 )
 
 func (m *Viki) MyModeMovie(in chan devicemanager.DeviceData) {
 
-	log.Printf("starting user routine mode sleep handler...")
+	glog.Infof("Starting user routine MyModeMovie...")
+	glog.Infof("Shutting down user routine MyModeMovie")
 
 	for {
 		select {
-		// Channel to recieve any events.
 		case got := <-in:
-			d, _ := got.Data.(string)
-			if got.Object == "mode_movie" {
+			name, _ := m.ObjectManager.GetObjectByAddress(got.Address)
+			d := m.getMochadState(name)
+			if got.Address == "mode_movie" {
 				if d == "On" {
-					m.execObject("living light", "Off")
-					m.execObject("dining light", "Off")
-					m.execObject("tv light", "On")
+					m.Do("living light", "Off")
+					m.Do("dining light", "Off")
+					m.Do("tv light", "On")
 				}
 				if d == "Off" {
-					m.execObject("living light", "On")
-					m.execObject("dining light", "On")
-					m.execObject("tv light", "Off")
+					m.Do("living light", "On")
+					m.Do("dining light", "On")
+					m.Do("tv light", "Off")
 				}
 			}
 		}

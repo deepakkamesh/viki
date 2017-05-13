@@ -7,9 +7,9 @@ package viki
 
 import (
 	"encoding/json"
-	"log"
 
 	"github.com/deepakkamesh/viki/devicemanager"
+	"github.com/golang/glog"
 )
 
 type ArtikAction struct {
@@ -32,20 +32,20 @@ type ArtikAction struct {
 
 func (m *Viki) MyArtikHandler(c chan devicemanager.DeviceData) {
 
-	log.Printf("starting user routine artikHandler...")
+	glog.Infof("starting user routine MyArtikHandler...")
+	defer glog.Infof("starting user routine MyArtikHandler")
 
 	for {
 		select {
-		// Channel to recieve any events.
 		case got := <-c:
-			if got.Object != "artik" {
+			if got.Address != "artik" {
 				continue
 			}
 			d, _ := got.Data.([]byte)
 
 			aa := ArtikAction{}
 			if err := json.Unmarshal(d, &aa); err != nil {
-				log.Printf("error unmarshalling %v", err)
+				glog.Errorf("Error unmarshalling: %v", err)
 				continue
 			}
 
