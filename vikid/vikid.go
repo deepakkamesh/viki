@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/deepakkamesh/viki"
 	"github.com/golang/glog"
@@ -48,6 +49,15 @@ func main() {
 	if err := v.Init(*configFile); err != nil {
 		glog.Fatalf("Fatal Error: %s\n", err)
 	}
+	go FlushLogs()
 	v.Run()
 	defer glog.Flush()
+}
+
+func FlushLogs() {
+	t := time.NewTicker(1 * time.Second)
+	for {
+		<-t.C
+		glog.Flush()
+	}
 }

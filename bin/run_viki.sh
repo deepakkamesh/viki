@@ -11,8 +11,9 @@ $LOC/vikid \
 -mg_pubkey=pubkey-ce009cba9207ec56ae09ac45b9607c2f \
 -email_alert_list=deepak.kamesh@gmail.com,6024050044@tmomail.net \
 -v=2 \
--alsologtostderr=true \
+-alsologtostderr=false \
 -logtostderr=false \
+-stderrthreshold=FATAL \
 -log_dir=$LOC/../logs \
 &
 #-ssl \

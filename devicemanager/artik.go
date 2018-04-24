@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/deepakkamesh/viki/devicemanager/device"
 	"github.com/deepakkamesh/viki/objectmanager"
@@ -27,6 +28,7 @@ type artik struct {
 	om   *objectmanager.ObjectManager
 	inC  chan []byte
 	ws   *websocket.Conn
+	t    *time.Timer
 }
 
 func (m *DeviceSettings) NewDeviceArtik(out chan DeviceData, err chan error, om *objectmanager.ObjectManager) (DeviceId, device.Device) {
@@ -37,6 +39,7 @@ func (m *DeviceSettings) NewDeviceArtik(out chan DeviceData, err chan error, om 
 		out:  out,                       // Channel to send out data.
 		om:   om,
 		inC:  make(chan []byte, 10), //Input channel for actions
+		t:    time.NewTimer(60 * time.Second),
 	}
 }
 
@@ -66,6 +69,7 @@ func (m *artik) Start() error {
 	}
 	go m.receiver()
 	go m.run()
+	go m.watchDog()
 	return nil
 }
 
@@ -106,14 +110,32 @@ func (m *artik) run() {
 	}
 }
 
+// watchDog automatically re-registers if no ping is recieved after 60s.
+// pings are recieved every 30s.
+func (m *artik) watchDog() {
+
+	for {
+		<-m.t.C
+		m.ws.Close()
+		time.Sleep(3 * time.Second)
+		glog.Warningf("Watchdog timer expired. Registering again..")
+		if err := m.register(); err != nil {
+			glog.Errorf("Registration failed %v", err)
+		}
+		m.t.Reset(60 * time.Second)
+	}
+}
+
 func (m *artik) receiver() {
 	for {
 		_, message, err := m.ws.ReadMessage()
 		if err != nil {
+			time.Sleep(60 * time.Second)
 			glog.Errorf("Read failed from websock: %v", err)
 			continue
 		}
 		glog.V(2).Infof("Recieved on websocket: %s", message)
+		m.t.Reset(40 * time.Second) // Reset timer since a message was recieved.
 		m.inC <- message
 	}
 }
