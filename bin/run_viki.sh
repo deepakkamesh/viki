@@ -4,7 +4,6 @@ LOC=$(dirname "$0")
 
 $LOC/vikid \
 -config_file=$LOC/objects.conf \
--graphite_ipport=metrics.hyperlinkhome.com:2003 \
 -resource=$LOC/../resources \
 -mg_domain=sandboxf139420cc83d4d3a8c3cf5dfc9b06b42.mailgun.org \
 -mg_apikey=key-6ceddfaf05c0d237076a19abe2afef5d \
@@ -17,3 +16,4 @@ $LOC/vikid \
 -log_dir=$LOC/../logs \
 &
 #-ssl \
+#-graphite_ipport=metrics.hyperlinkhome.com:2003 \

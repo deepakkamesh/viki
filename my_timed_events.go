@@ -12,6 +12,7 @@ func (m *Viki) MyTimedEvents(in chan devicemanager.DeviceData) {
 	defer glog.Infof("Shutting down user routine MyTimedEvents")
 
 	t1900 := NewReminder("1900", "1504") // Ping every 5pm.
+	t1700 := NewReminder("1700", "1504") // Ping every 5pm.
 	t2200 := NewReminder("2200", "1504") // Ping every 10pm.
 	t2000 := NewReminder("2000", "1504") // Ping every 8pm.
 	t0500 := NewReminder("0500", "1504") // Ping every 5am.
@@ -23,6 +24,7 @@ func (m *Viki) MyTimedEvents(in chan devicemanager.DeviceData) {
 		s.Around(lat, long, time.Now())
 		sunrise := s.Sunrise()
 	*/
+	_ = t1900
 
 	for {
 		select {
@@ -37,7 +39,7 @@ func (m *Viki) MyTimedEvents(in chan devicemanager.DeviceData) {
 			m.Do("tv light", "Off")
 			glog.Infof("Turning off all lights")
 
-		case <-t1900.C:
+		case <-t1700.C:
 			m.Do("living light", "On")
 			m.Do("dining light", "On")
 			m.Do("patio light", "On")
